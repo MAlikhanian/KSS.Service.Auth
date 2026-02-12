@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<RootNamespace>KSS.Repository</RootNamespace>
+		<AssemblyName>KSS.Repository</AssemblyName>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\KSS.Data\KSS.Data.csproj" />
+		<ProjectReference Include="..\KSS.Dto\KSS.Dto.csproj" />
+		<ProjectReference Include="..\KSS.Entity\KSS.Entity.csproj" />
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kss-main-service
+  namespace: kss-main-service
+  labels:
+    app: kss-main-service
+    version: v1.0.0
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: kss-main-service
+  template:
+    metadata:
+      labels:
+        app: kss-main-service
+        version: v1.0.0
+    spec:
+      imagePullSecrets:
+      - name: docker-secret
+      containers:
+      - name: kss-main-service
+        image: docker-hosted.sebaoffice.ir/kss-main-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:8000"
+        - name: TZ
+          value: "UTC"
+        - name: Logging__LogLevel__Default
+          value: "Information"
+        - name: Logging__LogLevel__Microsoft.AspNetCore
+          value: "Warning"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          capabilities:
+            drop:
+            - ALL
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kss-main-service-service
+  namespace: kss-main-service
+  labels:
+    app: kss-main-service
+  annotations:
+    haproxy.org/cookie-persistence: "main-session"
+spec:
+  selector:
+    app: kss-main-service
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP
+  sessionAffinity: None
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kss-main-service-ingress
+  namespace: kss-main-service
+  annotations:
+    haproxy.org/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    acme.cert-manager.io/http01-edit-in-place: "true"
+
+    kubernetes.io/ingress.class: haproxy
+    haproxy.org/cookie-persistence: "main-session"
+    haproxy.org/timeout-client: "10h"
+    haproxy.org/timeout-server: "10h"
+
+spec:
+  ingressClassName: haproxy
+  tls:
+  - hosts:
+    - main.api.sebaoffice.ir
+    secretName: kss-main-service-tls
+  rules:
+  - host: main.api.sebaoffice.ir
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kss-main-service-service
+            port:
+              number: 80

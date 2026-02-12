@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  kss-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kss-api
+    ports:
+      - "5055:8080"
+      - "7043:8081"
+    env_file:
+      # Load environment variables from .env file
+      - .env
+    environment:
+      # Override specific values if needed (optional)
+      # - ASPNETCORE_ENVIRONMENT=Development
+      # - JWT_SECRET=your-secret-key-here
+    volumes:
+      # Mount configuration directory (optional - if using config.json file)
+      - ./config:/app/config:ro
+    restart: unless-stopped
+    networks:
+      - kss-network
+
+networks:
+  kss-network:
+    driver: bridge
+

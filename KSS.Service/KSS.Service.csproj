@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<RootNamespace>KSS.Service</RootNamespace>
+		<AssemblyName>KSS.Service</AssemblyName>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<!--<Nullable>enable</Nullable>-->
+		<LangVersion>latest</LangVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="IService\ILetterActionService.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\KSS.Dto\KSS.Dto.csproj" />
+		<ProjectReference Include="..\KSS.Entity\KSS.Entity.csproj" />
+		<ProjectReference Include="..\KSS.Helper\KSS.Helper.csproj" />
+		<ProjectReference Include="..\KSS.Repository\KSS.Repository.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="AutoMapper" Version="16.0.0" />
+		<PackageReference Include="System.Data.OleDb" Version="10.0.2" />
+		<PackageReference Include="System.DirectoryServices.AccountManagement" Version="10.0.2" />
+		<PackageReference Include="System.Linq.Dynamic.Core" Version="1.7.1" />
+	</ItemGroup>
+
+</Project>
