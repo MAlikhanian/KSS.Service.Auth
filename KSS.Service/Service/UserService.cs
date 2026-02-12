@@ -21,55 +21,46 @@ namespace KSS.Service.Service
 
         public async Task<UserDto> RegisterAsync(RegisterRequestDto request)
         {
-            // Check if username already exists
+            // 1. Check username not exists
             var existingUserByUsername = await _userRepository.SingleOrDefaultAsync(u => u.Username == request.Username);
             if (existingUserByUsername != null)
-            {
                 throw new InvalidOperationException("Username already exists");
-            }
 
-            // Check if email already exists
+            // 2. Check email not exists
             var existingUserByEmail = await _userRepository.SingleOrDefaultAsync(u => u.Email == request.Email);
             if (existingUserByEmail != null)
-            {
                 throw new InvalidOperationException("Email already exists");
-            }
 
-            Guid? personId = request.PersonId;
-
-            // If PersonId is not provided, create a new person with first and last name
-            if (!personId.HasValue && !string.IsNullOrEmpty(request.FirstName) && !string.IsNullOrEmpty(request.LastName))
+            // 3. Check phone not exists (if provided)
+            if (!string.IsNullOrEmpty(request.Phone))
             {
-                try
-                {
-                    var createPersonRequest = new CreatePersonRequestDto
-                    {
-                        FirstName = request.FirstName,
-                        LastName = request.LastName,
-                        PreferredLanguageId = 1, // Persian language ID (default for registration)
-                        SexId = 1, // Default sex - should be configurable
-                        NationalId = Guid.NewGuid().ToString("N")[..20], // Generate a temporary national ID
-                        DateOfBirth = new DateTime(1990, 1, 1), // Default date of birth - should be configurable or from request
-                        BirthCountryId = request.CountryId ?? 1, // Use CountryId from request or default
-                        BirthRegionId = 1, // Default region
-                        BirthCityId = 1, // Default city
-                        NationalityCountryId = request.CountryId ?? 1 // Use CountryId from request or default
-                    };
-
-                    var createdPerson = await _personApiClient.CreatePersonAsync(createPersonRequest);
-                    personId = createdPerson.Id;
-                }
-                catch (Exception ex)
-                {
-                    throw new InvalidOperationException($"Failed to create person record: {ex.Message}", ex);
-                }
+                var existingUserByPhone = await _userRepository.SingleOrDefaultAsync(u => u.Phone == request.Phone);
+                if (existingUserByPhone != null)
+                    throw new InvalidOperationException("Phone already exists");
             }
 
-            // Create new user
+            // 4. Call Person API to create person and get PersonId
+            var createPersonRequest = new CreatePersonRequestDto
+            {
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                PreferredLanguageId = 1, // Persian
+                SexId = 1,
+                NationalId = Guid.NewGuid().ToString("N")[..20],
+                DateOfBirth = new DateTime(1990, 1, 1),
+                BirthCountryId = request.CountryId ?? 1,
+                BirthRegionId = 1,
+                BirthCityId = 1,
+                NationalityCountryId = request.CountryId ?? 1
+            };
+
+            var createdPerson = await _personApiClient.CreatePersonAsync(createPersonRequest);
+
+            // 5. Insert user with PersonId
             var user = new User
             {
                 Id = Guid.NewGuid(),
-                PersonId = personId,
+                PersonId = createdPerson.Id,
                 Username = request.Username,
                 Email = request.Email,
                 Phone = request.Phone,

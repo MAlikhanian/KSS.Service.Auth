@@ -25,8 +25,6 @@ namespace KSS.Dto
         [MaxLength(50)]
         public string LastName { get; set; } = string.Empty;
 
-        public Guid? PersonId { get; set; }
-
         [MaxLength(15)]
         public string? Phone { get; set; }
 
