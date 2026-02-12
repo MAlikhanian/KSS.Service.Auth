@@ -8,6 +8,7 @@ namespace KSS.Helper
     public class APIClient
     {
         private readonly HttpClient httpClient;
+
         public APIClient()
         {
             HttpClientHandler handler = new() { UseDefaultCredentials = true };
@@ -15,6 +16,19 @@ namespace KSS.Helper
             httpClient = new HttpClient(handler)
             {
                 BaseAddress = new Uri(BaseAddress()),
+                Timeout = TimeSpan.FromSeconds(1000)
+            };
+
+            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        }
+
+        public APIClient(string baseUrl)
+        {
+            HttpClientHandler handler = new() { UseDefaultCredentials = true };
+
+            httpClient = new HttpClient(handler)
+            {
+                BaseAddress = new Uri(baseUrl),
                 Timeout = TimeSpan.FromSeconds(1000)
             };
 

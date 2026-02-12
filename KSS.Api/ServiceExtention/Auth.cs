@@ -19,8 +19,8 @@ namespace KSS.Api.ServiceExtention
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IUserService, UserService>();
 
-            // Register HttpClient for Person API
-            services.AddHttpClient<IPersonApiClient, PersonApiClient>();
+            // Register Person API client (uses APIClient helper internally)
+            services.AddScoped<IPersonApiClient, PersonApiClient>();
 
             return services;
         }

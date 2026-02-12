@@ -46,7 +46,7 @@ namespace KSS.Service.Service
                 LastName = request.LastName,
                 PreferredLanguageId = 1, // Persian
                 SexId = 1,
-                NationalId = Guid.NewGuid().ToString("N")[..20],
+                NationalId = request.Username, // Username is the national code
                 DateOfBirth = new DateTime(1990, 1, 1),
                 BirthCountryId = request.CountryId ?? 1,
                 BirthRegionId = 1,
