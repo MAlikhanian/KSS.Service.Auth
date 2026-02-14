@@ -1,14 +1,13 @@
 version: '3.8'
 
 services:
-  kss-api:
+  kss-auth-api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: kss-api
+    container_name: kss-auth-api
     ports:
-      - "5055:8080"
-      - "7043:8081"
+      - "5055:8000"
     env_file:
       # Load environment variables from .env file
       - .env

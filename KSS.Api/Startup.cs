@@ -117,6 +117,10 @@ namespace KSS.Api
                         Title = "KSS.Service.Auth",
                         Version = "v1"
                     };
+                    document.Servers =
+                    [
+                        new Microsoft.OpenApi.Models.OpenApiServer { Url = "https://auth.api.sebaoffice.ir", Description = "Production" }
+                    ];
                     return Task.CompletedTask;
                 });
 

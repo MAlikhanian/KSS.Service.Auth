@@ -36,10 +36,10 @@ RUN mkdir -p /app/config
 # Copy published files from build stage
 COPY --from=build /app/publish .
 
-# Expose HTTP port
+# Expose HTTP port (must match appsettings.json "Port" for Production)
 EXPOSE 8000
 
-# Set environment variables
+# Set environment variables (prod: port 8000; dev uses 8001 via appsettings.Development.json)
 ENV ASPNETCORE_URLS=http://+:8000
 ENV ASPNETCORE_ENVIRONMENT=Production
 

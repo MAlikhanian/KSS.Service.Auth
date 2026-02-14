@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kss-main-service
-  namespace: kss-main-service
+  name: kss-auth-service
+  namespace: kss-auth-service
   labels:
-    app: kss-main-service
+    app: kss-auth-service
     version: v1.0.0
 spec:
   replicas: 1
@@ -15,18 +15,18 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app: kss-main-service
+      app: kss-auth-service
   template:
     metadata:
       labels:
-        app: kss-main-service
+        app: kss-auth-service
         version: v1.0.0
     spec:
       imagePullSecrets:
       - name: docker-secret
       containers:
-      - name: kss-main-service
-        image: docker-hosted.sebaoffice.ir/kss-main-service:latest
+      - name: kss-auth-service
+        image: docker-hosted.sebaoffice.ir/kss-auth-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
@@ -78,15 +78,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kss-main-service-service
-  namespace: kss-main-service
+  name: kss-auth-service-service
+  namespace: kss-auth-service
   labels:
-    app: kss-main-service
+    app: kss-auth-service
   annotations:
-    haproxy.org/cookie-persistence: "main-session"
+    haproxy.org/cookie-persistence: "auth-session"
 spec:
   selector:
-    app: kss-main-service
+    app: kss-auth-service
   ports:
   - name: http
     port: 80
@@ -98,15 +98,15 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: kss-main-service-ingress
-  namespace: kss-main-service
+  name: kss-auth-service-ingress
+  namespace: kss-auth-service
   annotations:
     haproxy.org/ssl-redirect: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     acme.cert-manager.io/http01-edit-in-place: "true"
 
     kubernetes.io/ingress.class: haproxy
-    haproxy.org/cookie-persistence: "main-session"
+    haproxy.org/cookie-persistence: "auth-session"
     haproxy.org/timeout-client: "10h"
     haproxy.org/timeout-server: "10h"
 
@@ -114,16 +114,16 @@ spec:
   ingressClassName: haproxy
   tls:
   - hosts:
-    - main.api.sebaoffice.ir
-    secretName: kss-main-service-tls
+    - auth.api.sebaoffice.ir
+    secretName: kss-auth-service-tls
   rules:
-  - host: main.api.sebaoffice.ir
+  - host: auth.api.sebaoffice.ir
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: kss-main-service-service
+            name: kss-auth-service-service
             port:
               number: 80
