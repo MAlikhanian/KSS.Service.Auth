@@ -22,7 +22,6 @@ namespace KSS.Service.Service
         {
             var payload = new
             {
-                Id = Guid.NewGuid(),
                 request.FirstName,
                 request.LastName,
                 request.SexId,

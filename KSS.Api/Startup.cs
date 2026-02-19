@@ -4,6 +4,7 @@ using System.Net;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -117,10 +118,15 @@ namespace KSS.Api
                         Title = "KSS.Service.Auth",
                         Version = "v1"
                     };
-                    document.Servers =
-                    [
-                        new Microsoft.OpenApi.Models.OpenApiServer { Url = "https://auth.api.sebaoffice.ir", Description = "Production" }
-                    ];
+                    
+                    var env = context.ApplicationServices.GetRequiredService<IWebHostEnvironment>();
+                    if (!env.IsDevelopment())
+                    {
+                        document.Servers =
+                        [
+                            new OpenApiServer { Url = "https://auth.api.sebaoffice.ir", Description = "Production" }
+                        ];
+                    }
                     return Task.CompletedTask;
                 });
 
@@ -257,6 +263,8 @@ namespace KSS.Api
                 configure.MapScalarApiReference(options =>
                 {
                     options.WithOpenApiRoutePattern("/openapi/{documentName}.json");
+                    // Don't set AddServer - let Scalar use servers from OpenAPI document (or current origin in dev)
+                    // This avoids CORS issues: Scalar automatically uses the origin it's loaded from
                 }).AllowAnonymous();
                 configure.MapControllerRoute(name: "default", pattern: "Api/{controller}/{action}/{id?}");
                 configure.MapControllers();
