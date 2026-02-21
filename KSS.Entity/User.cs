@@ -36,6 +36,9 @@ namespace KSS.Entity
         public DateTime? RefreshTokenExpires { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+
+        // Navigation properties
+        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     }
 }
 

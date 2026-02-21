@@ -1,3 +1,5 @@
+using KSS.Dto;
+using KSS.Entity;
 using KSS.Repository.IRepository;
 using KSS.Repository.Repository;
 using KSS.Service.IService;
@@ -18,6 +20,13 @@ namespace KSS.Api.ServiceExtention
 
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IUserService, UserService>();
+
+            // Role and Permission repositories and services
+            services.AddScoped<IRoleRepository, RoleRepository>();
+            services.AddScoped<IPermissionRepository, PermissionRepository>();
+            services.AddScoped<IBaseRepository<Permission>, PermissionRepository>();
+            services.AddScoped<IRoleService, RoleService>();
+            services.AddScoped<IBaseService<Permission, PermissionDto, PermissionDto, PermissionDto>, BaseService<Permission, PermissionDto, PermissionDto, PermissionDto>>();
 
             // Register Person API client (uses APIClient helper internally)
             services.AddScoped<IPersonApiClient, PersonApiClient>();

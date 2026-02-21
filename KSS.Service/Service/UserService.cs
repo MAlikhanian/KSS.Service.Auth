@@ -133,15 +133,21 @@ namespace KSS.Service.Service
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();
 
-            // Generate JWT token
-            var token = Authentication.JwtTokenGenerate(jwtSecret, user.Username, 60); // 60 minutes
+            // Load user roles and permissions for JWT claims
+            var roles = await _userRepository.GetUserRolesAsync(user.Id);
+            var permissions = await _userRepository.GetUserPermissionsAsync(user.Id);
+
+            // Generate JWT token with roles and permissions
+            var token = Authentication.JwtTokenGenerate(jwtSecret, user.Username, roles, permissions, 60);
 
             return new AuthResponseDto
             {
                 Token = token,
                 RefreshToken = refreshToken,
                 TokenExpires = DateTime.UtcNow.AddMinutes(60),
-                User = _mapper.Map<UserDto>(user)
+                User = _mapper.Map<UserDto>(user),
+                Roles = roles,
+                Permissions = permissions
             };
         }
 
