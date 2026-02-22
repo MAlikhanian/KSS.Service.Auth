@@ -35,8 +35,8 @@ kubectl get networkpolicy -n kss-auth-service
 
 kubectl create secret docker-registry docker-secret \
   --docker-server=docker-hosted.sebaoffice.ir \
-  --docker-username=0082280665 \
-  --docker-password=ABcd@12345 \
+  --docker-username=YOUR_USERNAME \
+  --docker-password=YOUR_PASSWORD \
   --namespace kss-auth-service
 
 kubectl apply -f deployment.yaml -n kss-auth-service
