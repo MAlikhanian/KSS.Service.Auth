@@ -76,6 +76,9 @@ namespace KSS.Service.Service
 
             await _userRepository.AddAsync(user);
 
+            // 6. Assign default "User" role (all permissions except Admin)
+            await _userRepository.AssignDefaultRoleAsync(user.Id);
+
             return _mapper.Map<UserDto>(user);
         }
 

@@ -44,5 +44,31 @@ namespace KSS.Repository.Repository
                 .Distinct()
                 .ToListAsync();
         }
+
+        /// <summary>
+        /// Assign the default "User" role to a newly registered user.
+        /// </summary>
+        public async Task AssignDefaultRoleAsync(Guid userId)
+        {
+            var userRole = await _dbContext.Roles
+                .Where(r => r.Name == "User" && r.IsActive)
+                .FirstOrDefaultAsync();
+
+            if (userRole == null) return; // Role not seeded yet — skip silently
+
+            var alreadyAssigned = await _dbContext.UserRoles
+                .AnyAsync(ur => ur.UserId == userId && ur.RoleId == userRole.Id);
+
+            if (!alreadyAssigned)
+            {
+                _dbContext.UserRoles.Add(new UserRole
+                {
+                    UserId = userId,
+                    RoleId = userRole.Id,
+                    AssignedAt = DateTime.UtcNow
+                });
+                await _dbContext.SaveChangesAsync();
+            }
+        }
     }
 }

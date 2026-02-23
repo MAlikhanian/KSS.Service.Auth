@@ -190,6 +190,30 @@ BEGIN
     PRINT 'Seeded Lookup permissions';
 END
 
+-- Brokerage permissions (SEBA_ERP_Members service)
+IF NOT EXISTS (SELECT 1 FROM [dbo].[Permission] WHERE [Name] = 'Brokerage.Read')
+BEGIN
+    INSERT INTO [dbo].[Permission] (Id, Name, [Description], [Group], CreatedAt, UpdatedAt)
+    VALUES
+        (NEWID(), 'Brokerage.Read',   'View brokerage data',   'Brokerage', GETUTCDATE(), GETUTCDATE()),
+        (NEWID(), 'Brokerage.Create', 'Create brokerage data', 'Brokerage', GETUTCDATE(), GETUTCDATE()),
+        (NEWID(), 'Brokerage.Update', 'Update brokerage data', 'Brokerage', GETUTCDATE(), GETUTCDATE()),
+        (NEWID(), 'Brokerage.Delete', 'Delete brokerage data', 'Brokerage', GETUTCDATE(), GETUTCDATE());
+    PRINT 'Seeded Brokerage permissions';
+END
+
+-- CompanyPersonAccess permissions (SEBA_ERP_Members service)
+IF NOT EXISTS (SELECT 1 FROM [dbo].[Permission] WHERE [Name] = 'CompanyPersonAccess.Read')
+BEGIN
+    INSERT INTO [dbo].[Permission] (Id, Name, [Description], [Group], CreatedAt, UpdatedAt)
+    VALUES
+        (NEWID(), 'CompanyPersonAccess.Read',   'View company-person access',   'CompanyPersonAccess', GETUTCDATE(), GETUTCDATE()),
+        (NEWID(), 'CompanyPersonAccess.Create', 'Create company-person access', 'CompanyPersonAccess', GETUTCDATE(), GETUTCDATE()),
+        (NEWID(), 'CompanyPersonAccess.Update', 'Update company-person access', 'CompanyPersonAccess', GETUTCDATE(), GETUTCDATE()),
+        (NEWID(), 'CompanyPersonAccess.Delete', 'Delete company-person access', 'CompanyPersonAccess', GETUTCDATE(), GETUTCDATE());
+    PRINT 'Seeded CompanyPersonAccess permissions';
+END
+
 -- Role management permission
 IF NOT EXISTS (SELECT 1 FROM [dbo].[Permission] WHERE [Name] = 'Role.Manage')
 BEGIN
@@ -214,33 +238,96 @@ BEGIN
     VALUES (@AdminRoleId, 'Admin', 'Full system administrator with all permissions', 1, GETUTCDATE(), GETUTCDATE());
 
     PRINT 'Created Admin role';
+END
+ELSE
+    PRINT 'Admin role already exists';
 
-    -- Assign ALL permissions to Admin role
+-- Always ensure Admin role has ALL permissions (catches newly added permissions)
+DECLARE @ExistingAdminRoleId UNIQUEIDENTIFIER;
+SELECT @ExistingAdminRoleId = Id FROM [dbo].[Role] WHERE [Name] = 'Admin';
+
+IF @ExistingAdminRoleId IS NOT NULL
+BEGIN
     INSERT INTO [dbo].[RolePermission] (RoleId, PermissionId, AssignedAt)
-    SELECT @AdminRoleId, Id, GETUTCDATE()
-    FROM [dbo].[Permission];
+    SELECT @ExistingAdminRoleId, p.Id, GETUTCDATE()
+    FROM [dbo].[Permission] p
+    WHERE NOT EXISTS (
+        SELECT 1 FROM [dbo].[RolePermission] rp
+        WHERE rp.RoleId = @ExistingAdminRoleId AND rp.PermissionId = p.Id
+    );
 
-    PRINT 'Assigned all permissions to Admin role';
+    PRINT 'Ensured Admin role has all permissions';
 
-    -- Assign Admin role to user 0082280665
+    -- Assign Admin role to user 0082280665 (if not already assigned)
     DECLARE @AdminUserId UNIQUEIDENTIFIER;
     SELECT @AdminUserId = Id FROM [dbo].[User] WHERE Username = '0082280665';
 
     IF @AdminUserId IS NOT NULL
     BEGIN
-        INSERT INTO [dbo].[UserRole] (UserId, RoleId, AssignedAt)
-        VALUES (@AdminUserId, @AdminRoleId, GETUTCDATE());
-        PRINT 'Admin role assigned to user 0082280665';
+        IF NOT EXISTS (SELECT 1 FROM [dbo].[UserRole] WHERE UserId = @AdminUserId AND RoleId = @ExistingAdminRoleId)
+        BEGIN
+            INSERT INTO [dbo].[UserRole] (UserId, RoleId, AssignedAt)
+            VALUES (@AdminUserId, @ExistingAdminRoleId, GETUTCDATE());
+            PRINT 'Admin role assigned to user 0082280665';
+        END
+        ELSE
+            PRINT 'User 0082280665 already has Admin role';
     END
     ELSE
         PRINT 'WARNING: User 0082280665 not found. Assign Admin role manually.';
 END
-ELSE
-    PRINT 'Admin role already exists - skipping';
 GO
 
 -- ============================================
--- 8. Verification
+-- 8. Create "User" role with all permissions except Admin, assign to ALL users
+-- ============================================
+PRINT '';
+PRINT '--- Creating User Role ---';
+
+IF NOT EXISTS (SELECT 1 FROM [dbo].[Role] WHERE [Name] = 'User')
+BEGIN
+    DECLARE @UserRoleId UNIQUEIDENTIFIER = NEWID();
+
+    INSERT INTO [dbo].[Role] (Id, Name, [Description], IsActive, CreatedAt, UpdatedAt)
+    VALUES (@UserRoleId, 'User', 'Default role for all users — all permissions except admin', 1, GETUTCDATE(), GETUTCDATE());
+
+    PRINT 'Created User role';
+END
+ELSE
+    PRINT 'User role already exists';
+
+-- Always ensure User role has all permissions EXCEPT Admin group
+DECLARE @ExistingUserRoleId UNIQUEIDENTIFIER;
+SELECT @ExistingUserRoleId = Id FROM [dbo].[Role] WHERE [Name] = 'User';
+
+IF @ExistingUserRoleId IS NOT NULL
+BEGIN
+    INSERT INTO [dbo].[RolePermission] (RoleId, PermissionId, AssignedAt)
+    SELECT @ExistingUserRoleId, p.Id, GETUTCDATE()
+    FROM [dbo].[Permission] p
+    WHERE p.[Group] <> 'Admin'
+      AND NOT EXISTS (
+          SELECT 1 FROM [dbo].[RolePermission] rp
+          WHERE rp.RoleId = @ExistingUserRoleId AND rp.PermissionId = p.Id
+      );
+
+    PRINT 'Ensured User role has all non-admin permissions';
+
+    -- Assign User role to ALL existing users who don't have it yet
+    INSERT INTO [dbo].[UserRole] (UserId, RoleId, AssignedAt)
+    SELECT u.Id, @ExistingUserRoleId, GETUTCDATE()
+    FROM [dbo].[User] u
+    WHERE NOT EXISTS (
+        SELECT 1 FROM [dbo].[UserRole] ur
+        WHERE ur.UserId = u.Id AND ur.RoleId = @ExistingUserRoleId
+    );
+
+    PRINT 'Assigned User role to all existing users';
+END
+GO
+
+-- ============================================
+-- 9. Verification
 -- ============================================
 PRINT '';
 PRINT '--- Verification ---';

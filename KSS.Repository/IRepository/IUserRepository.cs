@@ -6,5 +6,6 @@ namespace KSS.Repository.IRepository
     {
         Task<List<string>> GetUserRolesAsync(Guid userId);
         Task<List<string>> GetUserPermissionsAsync(Guid userId);
+        Task AssignDefaultRoleAsync(Guid userId);
     }
 }
