@@ -20,9 +20,9 @@ BEGIN
         [Id]          UNIQUEIDENTIFIER NOT NULL,
         [Name]        NVARCHAR(50)     NOT NULL,
         [Description] NVARCHAR(200)    NULL,
-        [IsActive]    BIT              NOT NULL DEFAULT 1,
-        [CreatedAt]   DATETIME2        NOT NULL DEFAULT SYSUTCDATETIME(),
-        [UpdatedAt]   DATETIME2        NOT NULL DEFAULT SYSUTCDATETIME(),
+        [IsActive]    BIT              NOT NULL CONSTRAINT [DF_Role_IsActive] DEFAULT 1,
+        [CreatedAt]   DATETIME2        NOT NULL CONSTRAINT [DF_Role_CreatedAt] DEFAULT SYSUTCDATETIME(),
+        [UpdatedAt]   DATETIME2        NOT NULL CONSTRAINT [DF_Role_UpdatedAt] DEFAULT SYSUTCDATETIME(),
         CONSTRAINT [PK_Role] PRIMARY KEY ([Id])
     );
 
@@ -43,8 +43,8 @@ BEGIN
         [Name]        NVARCHAR(100)    NOT NULL,
         [Description] NVARCHAR(200)    NULL,
         [Group]       NVARCHAR(50)     NULL,
-        [CreatedAt]   DATETIME2        NOT NULL DEFAULT SYSUTCDATETIME(),
-        [UpdatedAt]   DATETIME2        NOT NULL DEFAULT SYSUTCDATETIME(),
+        [CreatedAt]   DATETIME2        NOT NULL CONSTRAINT [DF_Permission_CreatedAt] DEFAULT SYSUTCDATETIME(),
+        [UpdatedAt]   DATETIME2        NOT NULL CONSTRAINT [DF_Permission_UpdatedAt] DEFAULT SYSUTCDATETIME(),
         CONSTRAINT [PK_Permission] PRIMARY KEY ([Id])
     );
 
@@ -63,7 +63,7 @@ BEGIN
     CREATE TABLE [dbo].[UserRole] (
         [UserId]     UNIQUEIDENTIFIER NOT NULL,
         [RoleId]     UNIQUEIDENTIFIER NOT NULL,
-        [AssignedAt] DATETIME2        NOT NULL DEFAULT SYSUTCDATETIME(),
+        [AssignedAt] DATETIME2        NOT NULL CONSTRAINT [DF_UserRole_AssignedAt] DEFAULT SYSUTCDATETIME(),
         CONSTRAINT [PK_UserRole] PRIMARY KEY ([UserId], [RoleId]),
         CONSTRAINT [FK_UserRole_User] FOREIGN KEY ([UserId]) REFERENCES [dbo].[User] ([Id]) ON DELETE CASCADE,
         CONSTRAINT [FK_UserRole_Role] FOREIGN KEY ([RoleId]) REFERENCES [dbo].[Role] ([Id]) ON DELETE CASCADE
@@ -83,7 +83,7 @@ BEGIN
     CREATE TABLE [dbo].[RolePermission] (
         [RoleId]       UNIQUEIDENTIFIER NOT NULL,
         [PermissionId] UNIQUEIDENTIFIER NOT NULL,
-        [AssignedAt]   DATETIME2        NOT NULL DEFAULT SYSUTCDATETIME(),
+        [AssignedAt]   DATETIME2        NOT NULL CONSTRAINT [DF_RolePermission_AssignedAt] DEFAULT SYSUTCDATETIME(),
         CONSTRAINT [PK_RolePermission] PRIMARY KEY ([RoleId], [PermissionId]),
         CONSTRAINT [FK_RolePermission_Role]       FOREIGN KEY ([RoleId])       REFERENCES [dbo].[Role] ([Id])       ON DELETE CASCADE,
         CONSTRAINT [FK_RolePermission_Permission] FOREIGN KEY ([PermissionId]) REFERENCES [dbo].[Permission] ([Id]) ON DELETE CASCADE

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace KSS.Entity
 {
@@ -12,11 +13,14 @@ namespace KSS.Entity
         public Guid? PersonId { get; set; }
         [Required]
         [MaxLength(50)]
+        [Unicode(false)]
         public string Username { get; set; } = string.Empty;
         [Required]
         [MaxLength(128)]
+        [Unicode(false)]
         public string Email { get; set; } = string.Empty;
         [MaxLength(15)]
+        [Unicode(false)]
         public string? Phone { get; set; }
         public short? CountryId { get; set; }
         [Required]
