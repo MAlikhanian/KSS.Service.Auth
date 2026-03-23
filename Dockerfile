@@ -1,5 +1,5 @@
 # Use the .NET 10.0 SDK image for building
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM docker.sebaoffice.ir/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy project files for dependency resolution
@@ -11,9 +11,12 @@ COPY KSS.Helper/KSS.Helper.csproj ./KSS.Helper/
 COPY KSS.Repository/KSS.Repository.csproj ./KSS.Repository/
 COPY KSS.Service/KSS.Service.csproj ./KSS.Service/
 
+# Copy NuGet config for local Nexus repository
+COPY nuget.config ./nuget.config
+
 # Restore NuGet packages for the API project (which will restore all dependencies)
 WORKDIR /src/KSS.Api
-RUN dotnet restore
+RUN dotnet restore --configfile /src/nuget.config
 
 # Copy all source code (maintains project structure)
 WORKDIR /src
@@ -27,7 +30,7 @@ RUN dotnet build -c Release -o /app/build --no-restore
 RUN dotnet publish -c Release -o /app/publish --no-restore
 
 # Use the .NET 10.0 ASP.NET runtime image for running
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM docker.sebaoffice.ir/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
 # Create directory for configuration files

@@ -13,8 +13,7 @@ namespace KSS.Api.ServiceExtention
     {
         public static IServiceCollection AddAuthServiceExtention(this IServiceCollection services, IConfiguration configuration)
         {
-            var connectionString = configuration.GetSection("ConnectionStrings")["KSSAuth"]
-                ?? configuration.GetSection("ConnectionStrings")["KSSMain"];
+            var connectionString = configuration.GetSection("ConnectionStrings")["DefaultConnection"];
 
             services.AddDbContext<MainDbContext>(options => options.UseSqlServer(connectionString));
 

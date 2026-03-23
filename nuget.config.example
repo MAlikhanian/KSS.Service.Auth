@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="nexus" value="YOUR_NUGET_SOURCE_URL_HERE" />
+  </packageSources>
+  <packageSourceCredentials>
+    <nexus>
+      <add key="Username" value="YOUR_USERNAME_HERE" />
+      <add key="ClearTextPassword" value="YOUR_PASSWORD_HERE" />
+    </nexus>
+  </packageSourceCredentials>
+</configuration>
