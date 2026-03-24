@@ -73,6 +73,8 @@ namespace KSS.Api
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+                    options.JsonSerializerOptions.Converters.Add(new Asset.UtcDateTimeConverter());
+                    options.JsonSerializerOptions.Converters.Add(new Asset.UtcNullableDateTimeConverter());
                 });
 
             // Configure the HTTP JSON options that OpenAPI schema generation reads
