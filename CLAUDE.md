@@ -2,6 +2,11 @@
 
 ## Architecture Rules
 
+### No Unauthorized Commits (CRITICAL)
+- **NEVER create git commits unless the user explicitly asks**
+- Do not commit after completing tasks, fixing bugs, or making changes
+- Wait for the user to say "commit" before running any git commit command
+
 ### No Unauthorized Installations (CRITICAL)
 - **NEVER install any application, package, or tool without explicit user confirmation first**
 - Always ask before running `npm install`, `dotnet add`, `pip install`, or any package manager command
