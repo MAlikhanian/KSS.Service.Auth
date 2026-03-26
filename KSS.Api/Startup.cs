@@ -69,7 +69,7 @@ namespace KSS.Api
             serviceCollection.AddWindowsService();
             serviceCollection.AddHostedService<ApiService>();
 
-            serviceCollection.AddControllers()
+            serviceCollection.AddControllers(options => { options.Filters.Add<Asset.DbExceptionFilter>(); })
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
