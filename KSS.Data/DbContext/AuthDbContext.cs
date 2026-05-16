@@ -7,7 +7,9 @@ namespace KSS.Data.DbContexts
     {
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
+        public DbSet<RoleTranslation> RoleTranslations { get; set; }
         public DbSet<Permission> Permissions { get; set; }
+        public DbSet<PermissionTranslation> PermissionTranslations { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
     }

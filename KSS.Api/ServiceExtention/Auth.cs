@@ -25,10 +25,14 @@ namespace KSS.Api.ServiceExtention
             services.AddScoped<IPermissionRepository, PermissionRepository>();
             services.AddScoped<IBaseRepository<Permission>, PermissionRepository>();
             services.AddScoped<IRoleService, RoleService>();
-            services.AddScoped<IBaseService<Permission, PermissionDto, PermissionDto, PermissionDto>, BaseService<Permission, PermissionDto, PermissionDto, PermissionDto>>();
+            services.AddScoped<IPermissionService, PermissionService>();
+            // PermissionController has its own dedicated read-only API; no BaseService<Permission> binding needed.
 
             // Register Person API client (uses APIClient helper internally)
             services.AddScoped<IPersonApiClient, PersonApiClient>();
+
+            // Register Captcha service client (verifies altcha payloads against KSS.Service.Captcha)
+            services.AddScoped<ICaptchaClient, CaptchaClient>();
 
             return services;
         }

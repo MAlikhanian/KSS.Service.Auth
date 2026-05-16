@@ -107,7 +107,7 @@ namespace KSS.Helper
                     {
                         PropertyInfo prop = properties[i];
 
-                        object value = prop.GetValue(item);
+                        object? value = prop.GetValue(item);
 
                         errorTitle.AppendFormat("{0}: {1}; ", prop.Name, value);
 

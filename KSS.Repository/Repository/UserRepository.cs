@@ -18,10 +18,19 @@ namespace KSS.Repository.Repository
         {
             return await _dbContext.UserRoles
                 .Where(ur => ur.UserId == userId)
-                .Join(_dbContext.Roles.Where(r => r.IsActive),
+                .Join(_dbContext.Roles,
                     ur => ur.RoleId,
                     r => r.Id,
-                    (ur, r) => r.Name)
+                    (ur, r) => r.Code)
+                .ToListAsync();
+        }
+
+        public async Task<List<Guid>> GetUserRoleIdsAsync(Guid userId)
+        {
+            return await _dbContext.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Select(ur => ur.RoleId)
+                .Distinct()
                 .ToListAsync();
         }
 
@@ -29,7 +38,7 @@ namespace KSS.Repository.Repository
         {
             return await _dbContext.UserRoles
                 .Where(ur => ur.UserId == userId)
-                .Join(_dbContext.Roles.Where(r => r.IsActive),
+                .Join(_dbContext.Roles,
                     ur => ur.RoleId,
                     r => r.Id,
                     (ur, r) => r.Id)
@@ -40,7 +49,7 @@ namespace KSS.Repository.Repository
                 .Join(_dbContext.Permissions,
                     permissionId => permissionId,
                     p => p.Id,
-                    (permissionId, p) => p.Name)
+                    (permissionId, p) => p.Code)
                 .Distinct()
                 .ToListAsync();
         }
@@ -51,7 +60,7 @@ namespace KSS.Repository.Repository
         public async Task AssignDefaultRoleAsync(Guid userId)
         {
             var userRole = await _dbContext.Roles
-                .Where(r => r.Name == "User" && r.IsActive)
+                .Where(r => r.Code == "User")
                 .FirstOrDefaultAsync();
 
             if (userRole == null) return; // Role not seeded yet — skip silently
@@ -64,8 +73,7 @@ namespace KSS.Repository.Repository
                 _dbContext.UserRoles.Add(new UserRole
                 {
                     UserId = userId,
-                    RoleId = userRole.Id,
-                    AssignedAt = DateTime.UtcNow
+                    RoleId = userRole.Id
                 });
                 await _dbContext.SaveChangesAsync();
             }

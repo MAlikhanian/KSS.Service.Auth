@@ -1,5 +1,7 @@
 # Use the .NET 10.0 SDK image for building
-FROM docker.sebaoffice.ir/dotnet/sdk:10.0 AS build
+# TEMP-NEXUS-BYPASS: original line below, restore once Nexus DNS is fixed
+# FROM docker.sebaoffice.ir/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy project files for dependency resolution
@@ -30,7 +32,9 @@ RUN dotnet build -c Release -o /app/build --no-restore
 RUN dotnet publish -c Release -o /app/publish --no-restore
 
 # Use the .NET 10.0 ASP.NET runtime image for running
-FROM docker.sebaoffice.ir/dotnet/aspnet:10.0 AS runtime
+# TEMP-NEXUS-BYPASS: original line below, restore once Nexus DNS is fixed
+# FROM docker.sebaoffice.ir/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
 # Create directory for configuration files

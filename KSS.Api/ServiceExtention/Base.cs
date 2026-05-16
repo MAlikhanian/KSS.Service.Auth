@@ -1,4 +1,6 @@
 using KSS.Helper;
+using KSS.Helper.Authorization;
+using Microsoft.AspNetCore.Authorization;
 
 namespace KSS.Api.ServiceExtention
 {
@@ -9,6 +11,11 @@ namespace KSS.Api.ServiceExtention
             serviceCollection.AddAuthServiceExtention(configuration);
 
             serviceCollection.AddScoped<GlobalProperty>();
+
+            // Permission-based authorization
+            serviceCollection.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+            serviceCollection.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+            serviceCollection.AddScoped<PermissionAuthorizationFilter>();
 
             return serviceCollection;
         }

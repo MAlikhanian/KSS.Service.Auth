@@ -11,9 +11,9 @@ namespace KSS.Service.IService
     {
         #region Find
 
-        Task<T> FindAsync(Filter id);
+        Task<T?> FindAsync(Filter id);
 
-        T Find(object id);
+        T? Find(object id);
 
         #endregion
 
@@ -33,17 +33,17 @@ namespace KSS.Service.IService
         Task<T> SingleUnawaited(IQueryable<T> queryable);
 
 
-        Task<T> SingleOrDefaultAsync();
-        Task<T> SingleOrDefaultAsync(Expression<Func<T, bool>> filter);
-        Task<T> SingleOrDefaultAsync(IQueryable<T> queryable);
+        Task<T?> SingleOrDefaultAsync();
+        Task<T?> SingleOrDefaultAsync(Expression<Func<T, bool>> filter);
+        Task<T?> SingleOrDefaultAsync(IQueryable<T> queryable);
 
-        T SingleOrDefault();
-        T SingleOrDefault(Expression<Func<T, bool>> filter);
-        T SingleOrDefault(IQueryable<T> queryable);
+        T? SingleOrDefault();
+        T? SingleOrDefault(Expression<Func<T, bool>> filter);
+        T? SingleOrDefault(IQueryable<T> queryable);
 
-        Task<T> SingleOrDefaultUnawaited();
-        Task<T> SingleOrDefaultUnawaited(Expression<Func<T, bool>> filter);
-        Task<T> SingleOrDefaultUnawaited(IQueryable<T> queryable);
+        Task<T?> SingleOrDefaultUnawaited();
+        Task<T?> SingleOrDefaultUnawaited(Expression<Func<T, bool>> filter);
+        Task<T?> SingleOrDefaultUnawaited(IQueryable<T> queryable);
 
         #endregion
 
@@ -62,17 +62,17 @@ namespace KSS.Service.IService
         Task<T> FirstUnawaited(IQueryable<T> queryable);
 
 
-        Task<T> FirstOrDefaultAsync();
-        Task<T> FirstOrDefaultAsync(Expression<Func<T, bool>> filter);
-        Task<T> FirstOrDefaultAsync(IQueryable<T> queryable);
+        Task<T?> FirstOrDefaultAsync();
+        Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> filter);
+        Task<T?> FirstOrDefaultAsync(IQueryable<T> queryable);
 
-        T FirstOrDefault();
-        T FirstOrDefault(Expression<Func<T, bool>> filter);
-        T FirstOrDefault(IQueryable<T> queryable);
+        T? FirstOrDefault();
+        T? FirstOrDefault(Expression<Func<T, bool>> filter);
+        T? FirstOrDefault(IQueryable<T> queryable);
 
-        Task<T> FirstOrDefaultUnawaited();
-        Task<T> FirstOrDefaultUnawaited(Expression<Func<T, bool>> filter);
-        Task<T> FirstOrDefaultUnawaited(IQueryable<T> queryable);
+        Task<T?> FirstOrDefaultUnawaited();
+        Task<T?> FirstOrDefaultUnawaited(Expression<Func<T, bool>> filter);
+        Task<T?> FirstOrDefaultUnawaited(IQueryable<T> queryable);
 
         #endregion
 

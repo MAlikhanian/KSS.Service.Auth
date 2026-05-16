@@ -8,7 +8,7 @@ namespace KSS.Data.Configuration
     {
         public void Configure(EntityTypeBuilder<Role> b)
         {
-            b.HasIndex(r => r.Name).IsUnique();
+            b.HasIndex(r => r.Code).IsUnique();
         }
     }
 }

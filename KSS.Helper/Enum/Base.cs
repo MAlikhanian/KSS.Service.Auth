@@ -34,6 +34,7 @@ namespace KSS.Helper.Enum.Base
         String,
         DateTime,
         Boolean,
+        Guid,
     }
 
     public enum Status : byte

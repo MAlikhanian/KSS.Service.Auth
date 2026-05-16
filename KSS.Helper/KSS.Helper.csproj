@@ -5,9 +5,13 @@
 		<AssemblyName>KSS.Helper</AssemblyName>
 		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<!--<Nullable>enable</Nullable>-->
+		<Nullable>enable</Nullable>
 		<LangVersion>latest</LangVersion>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />

@@ -19,10 +19,20 @@ namespace KSS.Helper
 
         public static string JwtTokenGenerate(string jwtSecret, string username, int validMinutes = 60)
         {
-            return JwtTokenGenerate(jwtSecret, username, new List<string>(), new List<string>(), validMinutes);
+            return JwtTokenGenerate(jwtSecret, username, new List<string>(), new List<string>(), null, new List<Guid>(), validMinutes);
         }
 
         public static string JwtTokenGenerate(string jwtSecret, string username, List<string> roles, List<string> permissions, int validMinutes = 60)
+        {
+            return JwtTokenGenerate(jwtSecret, username, roles, permissions, null, new List<Guid>(), validMinutes);
+        }
+
+        public static string JwtTokenGenerate(string jwtSecret, string username, List<string> roles, List<string> permissions, Guid? personId, int validMinutes = 60)
+        {
+            return JwtTokenGenerate(jwtSecret, username, roles, permissions, personId, new List<Guid>(), validMinutes);
+        }
+
+        public static string JwtTokenGenerate(string jwtSecret, string username, List<string> roles, List<string> permissions, Guid? personId, List<Guid> roleIds, int validMinutes = 60)
         {
             var claims = new List<Claim>
             {
@@ -30,10 +40,24 @@ namespace KSS.Helper
                 new Claim("userName", username)
             };
 
+            // Stamp the user's PersonId so downstream services (e.g., CreditRating
+            // approve/reject) can identify the caller's person without a Person API hop.
+            if (personId.HasValue && personId.Value != Guid.Empty)
+            {
+                claims.Add(new Claim("personId", personId.Value.ToString()));
+            }
+
             // Add each role as a separate Role claim
             foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            // Role Ids are emitted as "roleId" claims so downstream services can
+            // match RoleAccess rows (which key off Role.Id, not Role.Code).
+            foreach (var roleId in roleIds)
+            {
+                claims.Add(new Claim("roleId", roleId.ToString()));
             }
 
             // Add each permission as a separate "permission" claim

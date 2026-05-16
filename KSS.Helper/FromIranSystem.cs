@@ -23,7 +23,7 @@ namespace KSS.Helper
         #region private Members (3)
 
         // متغیری برای نگهداری اعدادی که در رشته ایران سیستم وجود دارند
-        static Stack<string> NumbersInTheString;
+        static Stack<string>? NumbersInTheString;
 
         // کد کاراکترها در ایران سیستم و معادل آنها در عربی 1256
         static Dictionary<byte, byte> CharactersMapper = new Dictionary<byte, byte>
@@ -291,7 +291,7 @@ namespace KSS.Helper
         {
             while (convertedString.IndexOf("#") >= 0)
             {
-                string number = Reverse(NumbersInTheString.Pop());
+                string number = Reverse(NumbersInTheString!.Pop());
                 if (!string.IsNullOrWhiteSpace(number))
                 {
                     int index = convertedString.IndexOf("#");

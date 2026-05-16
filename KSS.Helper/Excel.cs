@@ -58,7 +58,7 @@ namespace KSS.Helper
         }
         public void Write(string directory, string filePath, string worksheetName, List<D> items, bool columnName = true, bool persianColumnName = false,
             byte startColumn = 1, bool showZero = false,
-            bool customView = true, bool printSetting = false, byte? pageSettingType = null, string title = null, bool addRowNumber = false)
+            bool customView = true, bool printSetting = false, byte? pageSettingType = null, string? title = null, bool addRowNumber = false)
         {
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
@@ -124,7 +124,7 @@ namespace KSS.Helper
 
                     if (property.GetValue(dataModel) != null)
                     {
-                        if (!showZero && property.GetValue(dataModel).ToString() == "0")
+                        if (!showZero && property.GetValue(dataModel)!.ToString() == "0")
                             worksheet.Cells[excelRow, colIndex + col].Value = string.Empty;
                         else
                             worksheet.Cells[excelRow, colIndex + col].Value = property.GetValue(dataModel);
@@ -132,7 +132,7 @@ namespace KSS.Helper
 
                     bool hasType = property.IsDefined(typeof(ColumnType), false);
 
-                    if (hasType && attribute.Type == "HyperLink")
+                    if (hasType && attribute!.Type == "HyperLink")
                     {
                         var url = property.GetValue(dataModel)?.ToString();
                         if (!string.IsNullOrEmpty(url))
@@ -158,7 +158,7 @@ namespace KSS.Helper
             package.Save();
         }
 
-        private void ApplyCustomView(ExcelPackage package, ExcelWorksheet worksheet, int totalRows, int totalCols, bool hasHeader = true, byte? pageSettingType = null, string title = null)
+        private void ApplyCustomView(ExcelPackage package, ExcelWorksheet worksheet, int totalRows, int totalCols, bool hasHeader = true, byte? pageSettingType = null, string? title = null)
         {
             switch (pageSettingType)
             {
@@ -203,7 +203,7 @@ namespace KSS.Helper
 
                     worksheet.Cells[1, 1, 3, totalCols].Clear();
 
-                    var parts = title.Split(',');
+                    var parts = title!.Split(',');
 
                     #region First row
 
@@ -360,7 +360,7 @@ namespace KSS.Helper
 
                             if (cell.Value != null)
                             {
-                                cell.Value = cell.Value.ToString().Replace("/", Environment.NewLine);
+                                cell.Value = cell.Value.ToString()!.Replace("/", Environment.NewLine);
                                 cell.Style.WrapText = true;
                             }
 
@@ -456,7 +456,7 @@ namespace KSS.Helper
 
                     worksheet.Cells[1, 1, 6, totalCols].Clear();
 
-                    parts = title.Split(',');
+                    parts = title!.Split(',');
 
                     #region build first top row
 
@@ -701,7 +701,7 @@ namespace KSS.Helper
                     break;
             }
         }
-        private void ApplyPrintSettings(ExcelPackage package, ExcelWorksheet worksheet, int totalCols, int totalRows, byte? pageSettingType = null, string headerTitle = null)
+        private void ApplyPrintSettings(ExcelPackage package, ExcelWorksheet worksheet, int totalCols, int totalRows, byte? pageSettingType = null, string? headerTitle = null)
         {
             switch (pageSettingType)
             {

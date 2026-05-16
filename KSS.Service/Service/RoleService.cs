@@ -2,12 +2,18 @@ using AutoMapper;
 using KSS.Data.DbContexts;
 using KSS.Dto;
 using KSS.Entity;
+using KSS.Helper;
 using KSS.Repository.IRepository;
 using KSS.Service.IService;
 using Microsoft.EntityFrameworkCore;
 
 namespace KSS.Service.Service
 {
+    /// <summary>
+    /// Role service. Role + RolePermission catalogs are read-only (DBA-managed
+    /// via migrations). The only editable concern here is UserRole assignment
+    /// (admin granting roles to users).
+    /// </summary>
     public class RoleService : BaseService<Role, RoleDto, RoleDto, RoleDto>, IRoleService
     {
         private readonly IRoleRepository _roleRepository;
@@ -19,103 +25,28 @@ namespace KSS.Service.Service
             _dbContext = dbContext;
         }
 
-        public async Task<RoleDto> CreateRoleAsync(CreateRoleRequestDto request)
-        {
-            // Check if role name already exists
-            var existingRole = await _roleRepository.SingleOrDefaultAsync(r => r.Name == request.Name);
-            if (existingRole != null)
-                throw new InvalidOperationException($"Role '{request.Name}' already exists");
-
-            var role = new Role
-            {
-                Id = Guid.NewGuid(),
-                Name = request.Name,
-                Description = request.Description,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            await _roleRepository.AddAsync(role);
-
-            // Assign permissions if provided
-            if (request.PermissionIds.Any())
-            {
-                await AssignPermissionsToRoleAsync(role.Id, request.PermissionIds);
-            }
-
-            return await GetRoleWithPermissionsAsync(role.Id);
-        }
-
-        public async Task AssignPermissionsToRoleAsync(Guid roleId, List<Guid> permissionIds)
-        {
-            // Remove existing permissions
-            var existingPermissions = await _dbContext.RolePermissions
-                .Where(rp => rp.RoleId == roleId)
-                .ToListAsync();
-            _dbContext.RolePermissions.RemoveRange(existingPermissions);
-
-            // Add new permissions
-            var rolePermissions = permissionIds.Select(permissionId => new RolePermission
-            {
-                RoleId = roleId,
-                PermissionId = permissionId,
-                AssignedAt = DateTime.UtcNow
-            });
-
-            await _dbContext.RolePermissions.AddRangeAsync(rolePermissions);
-            await _dbContext.SaveChangesAsync();
-        }
-
-        public async Task AssignRolesToUserAsync(AssignRoleRequestDto request)
-        {
-            // Check user exists
-            var user = await _dbContext.Users.FindAsync(request.UserId);
-            if (user == null)
-                throw new ArgumentException($"User with ID '{request.UserId}' not found");
-
-            // Remove existing roles
-            var existingRoles = await _dbContext.UserRoles
-                .Where(ur => ur.UserId == request.UserId)
-                .ToListAsync();
-            _dbContext.UserRoles.RemoveRange(existingRoles);
-
-            // Assign new roles
-            var userRoles = request.RoleIds.Select(roleId => new UserRole
-            {
-                UserId = request.UserId,
-                RoleId = roleId,
-                AssignedAt = DateTime.UtcNow
-            });
-
-            await _dbContext.UserRoles.AddRangeAsync(userRoles);
-            await _dbContext.SaveChangesAsync();
-        }
-
-        public async Task RemoveRolesFromUserAsync(Guid userId, List<Guid> roleIds)
-        {
-            var userRoles = await _dbContext.UserRoles
-                .Where(ur => ur.UserId == userId && roleIds.Contains(ur.RoleId))
-                .ToListAsync();
-            _dbContext.UserRoles.RemoveRange(userRoles);
-            await _dbContext.SaveChangesAsync();
-        }
-
         public async Task<List<RoleDto>> GetAllRolesWithPermissionsAsync()
         {
             var roles = await _dbContext.Roles
+                .Include(r => r.Translations)
                 .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
-                .Where(r => r.IsActive)
+                .OrderBy(r => r.Code)
                 .ToListAsync();
 
             return roles.Select(r => new RoleDto
             {
                 Id = r.Id,
-                Name = r.Name,
-                Description = r.Description,
-                IsActive = r.IsActive,
-                Permissions = r.RolePermissions.Select(rp => rp.Permission.Name).ToList()
+                Code = r.Code,
+                ModuleId = r.ModuleId,
+                Translations = r.Translations.Select(t => new RoleTranslationDto
+                {
+                    RoleId = t.RoleId,
+                    LanguageId = t.LanguageId,
+                    Name = t.Name,
+                    Description = t.Description,
+                }).ToList(),
+                Permissions = r.RolePermissions.Select(rp => rp.Permission.Code).ToList(),
             }).ToList();
         }
 
@@ -123,10 +54,10 @@ namespace KSS.Service.Service
         {
             return await _dbContext.UserRoles
                 .Where(ur => ur.UserId == userId)
-                .Join(_dbContext.Roles.Where(r => r.IsActive),
+                .Join(_dbContext.Roles,
                     ur => ur.RoleId,
                     r => r.Id,
-                    (ur, r) => r.Name)
+                    (ur, r) => r.Code)
                 .ToListAsync();
         }
 
@@ -134,7 +65,7 @@ namespace KSS.Service.Service
         {
             return await _dbContext.UserRoles
                 .Where(ur => ur.UserId == userId)
-                .Join(_dbContext.Roles.Where(r => r.IsActive),
+                .Join(_dbContext.Roles,
                     ur => ur.RoleId,
                     r => r.Id,
                     (ur, r) => r.Id)
@@ -145,26 +76,31 @@ namespace KSS.Service.Service
                 .Join(_dbContext.Permissions,
                     permissionId => permissionId,
                     p => p.Id,
-                    (permissionId, p) => p.Name)
+                    (permissionId, p) => p.Code)
                 .Distinct()
                 .ToListAsync();
         }
 
-        private async Task<RoleDto> GetRoleWithPermissionsAsync(Guid roleId)
+        public async Task AssignRolesToUserAsync(AssignRoleRequestDto request)
         {
-            var role = await _dbContext.Roles
-                .Include(r => r.RolePermissions)
-                    .ThenInclude(rp => rp.Permission)
-                .FirstAsync(r => r.Id == roleId);
+            var user = await _dbContext.Users.FindAsync(request.UserId);
+            if (user == null)
+                throw new BusinessRuleException($"User with ID '{request.UserId}' not found");
 
-            return new RoleDto
+            // Replace existing UserRole rows for this user.
+            var existingRoles = await _dbContext.UserRoles
+                .Where(ur => ur.UserId == request.UserId)
+                .ToListAsync();
+            _dbContext.UserRoles.RemoveRange(existingRoles);
+
+            var userRoles = request.RoleIds.Select(roleId => new UserRole
             {
-                Id = role.Id,
-                Name = role.Name,
-                Description = role.Description,
-                IsActive = role.IsActive,
-                Permissions = role.RolePermissions.Select(rp => rp.Permission.Name).ToList()
-            };
+                UserId = request.UserId,
+                RoleId = roleId
+            });
+            await _dbContext.UserRoles.AddRangeAsync(userRoles);
+            await _dbContext.SaveChangesAsync();
         }
+
     }
 }

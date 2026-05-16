@@ -5,6 +5,7 @@ namespace KSS.Repository.IRepository
     public interface IUserRepository : IBaseRepository<User>
     {
         Task<List<string>> GetUserRolesAsync(Guid userId);
+        Task<List<Guid>> GetUserRoleIdsAsync(Guid userId);
         Task<List<string>> GetUserPermissionsAsync(Guid userId);
         Task AssignDefaultRoleAsync(Guid userId);
     }

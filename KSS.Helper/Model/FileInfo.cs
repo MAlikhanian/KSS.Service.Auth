@@ -2,9 +2,9 @@ namespace KSS.Helper.Model
 {
     public class FileInfo
     {
-        public string Excel { get; set; }
-        public string Notepad { get; set; }
-        public string DBF { get; set; }
-        public string RAR { get; set; }
+        public string Excel { get; set; } = string.Empty;
+        public string Notepad { get; set; } = string.Empty;
+        public string DBF { get; set; } = string.Empty;
+        public string RAR { get; set; } = string.Empty;
     }
 }

@@ -166,6 +166,10 @@ namespace KSS.Api
 
             serviceCollection.Configure<KestrelServerOptions>(configureOptions =>
             {
+                // Authorization header carries a fat JWT (200+ permission claims) — raise the
+                // header size limit from the 32 KB default to 128 KB to avoid HTTP 431.
+                configureOptions.Limits.MaxRequestHeadersTotalSize = 131072;
+
                 // Get certificate settings from configuration (appsettings.json or environment variables)
                 string? pfxFilePath = Configuration["CERTIFICATE_PFX_FILE_PATH"]
                     ?? Configuration["Certificate:pfxFilePath"]

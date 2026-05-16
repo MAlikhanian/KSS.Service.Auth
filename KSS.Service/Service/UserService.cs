@@ -24,42 +24,39 @@ namespace KSS.Service.Service
             // 1. Check username not exists
             var existingUserByUsername = await _userRepository.SingleOrDefaultAsync(u => u.Username == request.Username);
             if (existingUserByUsername != null)
-                throw new InvalidOperationException("Username already exists");
+                throw new BusinessRuleException("DUPLICATE_USERNAME");
 
             // 2. Check email not exists
             var existingUserByEmail = await _userRepository.SingleOrDefaultAsync(u => u.Email == request.Email);
             if (existingUserByEmail != null)
-                throw new InvalidOperationException("Email already exists");
+                throw new BusinessRuleException("DUPLICATE_EMAIL");
 
             // 3. Check phone not exists (if provided)
             if (!string.IsNullOrEmpty(request.Phone))
             {
                 var existingUserByPhone = await _userRepository.SingleOrDefaultAsync(u => u.Phone == request.Phone);
                 if (existingUserByPhone != null)
-                    throw new InvalidOperationException("Phone already exists");
+                    throw new BusinessRuleException("DUPLICATE_PHONE");
             }
 
-            // 4. Call Person API to create person and get PersonId
+            // 4. Call Person API to create person and get PersonId.
+            // Leave SexId / DateOfBirth / Birth*Id at DTO defaults — the user
+            // fills them in from the profile page. PreferredLanguageId
+            // defaults to 12 (Persian); pass it explicitly if the caller wants
+            // to override.
             var createPersonRequest = new CreatePersonRequestDto
             {
                 FirstName = request.FirstName,
                 LastName = request.LastName,
-                PreferredLanguageId = 1, // Persian
-                SexId = 1,
-                NationalId = request.Username, // Username is the national code
-                DateOfBirth = new DateTime(1990, 1, 1),
+                NationalId = request.Username,
                 BirthCountryId = request.CountryId ?? 1,
-                BirthRegionId = 1,
-                BirthCityId = 1,
-                NationalityCountryId = request.CountryId ?? 1
             };
 
             var createdPerson = await _personApiClient.CreatePersonAsync(createPersonRequest);
 
-            // 5. Insert user with PersonId
+            // 5. Insert user with PersonId — Id, CreatedBy, CreatedAt are set by ApplyEntityDefaults
             var user = new User
             {
-                Id = Guid.NewGuid(),
                 PersonId = createdPerson.Id,
                 Username = request.Username,
                 Email = request.Email,
@@ -69,9 +66,7 @@ namespace KSS.Service.Service
                 IsActive = true,
                 IsEmailVerified = false,
                 IsPhoneVerified = false,
-                FailedLoginAttempts = 0,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                FailedLoginAttempts = 0
             };
 
             await _userRepository.AddAsync(user);
@@ -115,7 +110,6 @@ namespace KSS.Service.Service
                     user.LockedUntil = DateTime.UtcNow.AddMinutes(30);
                 }
 
-                user.UpdatedAt = DateTime.UtcNow;
                 _userRepository.Update(user);
                 await _userRepository.SaveChangesAsync();
 
@@ -126,7 +120,6 @@ namespace KSS.Service.Service
             user.FailedLoginAttempts = 0;
             user.LockedUntil = null;
             user.LastLoginAt = DateTime.UtcNow;
-            user.UpdatedAt = DateTime.UtcNow;
 
             // Generate refresh token
             var refreshToken = Guid.NewGuid().ToString() + Guid.NewGuid().ToString();
@@ -138,10 +131,12 @@ namespace KSS.Service.Service
 
             // Load user roles and permissions for JWT claims
             var roles = await _userRepository.GetUserRolesAsync(user.Id);
+            var roleIds = await _userRepository.GetUserRoleIdsAsync(user.Id);
             var permissions = await _userRepository.GetUserPermissionsAsync(user.Id);
 
-            // Generate JWT token with roles and permissions
-            var token = Authentication.JwtTokenGenerate(jwtSecret, user.Username, roles, permissions, 60);
+            // Generate JWT token with roles, role Ids, permissions, and PersonId.
+            // RoleIds power the Person service's RoleAccess lookups.
+            var token = Authentication.JwtTokenGenerate(jwtSecret, user.Username, roles, permissions, user.PersonId, roleIds, 60);
 
             return new AuthResponseDto
             {
@@ -164,6 +159,118 @@ namespace KSS.Service.Service
         {
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == email);
             return user != null ? _mapper.Map<UserDto>(user) : null;
+        }
+
+        public async Task<UserDto?> GetByPersonIdAsync(Guid personId)
+        {
+            var user = await _userRepository.SingleOrDefaultAsync(u => u.PersonId == personId);
+            return user != null ? _mapper.Map<UserDto>(user) : null;
+        }
+
+        // ─── Security management (powers the /person/security page) ───
+
+        public async Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
+        {
+            ValidatePassword(newPassword);
+
+            var user = await _userRepository.SingleOrDefaultAsync(u => u.Id == userId)
+                       ?? throw new BusinessRuleException("User not found");
+
+            if (!Authentication.PasswordVerify(user.PasswordHash, currentPassword))
+                throw new BusinessRuleException("Current password is incorrect");
+
+            user.PasswordHash = Authentication.PasswordHash(newPassword);
+            user.PasswordResetToken = null;
+            user.PasswordResetExpires = null;
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+        }
+
+        public async Task AdminResetPasswordAsync(Guid userId, string newPassword)
+        {
+            ValidatePassword(newPassword);
+
+            var user = await _userRepository.SingleOrDefaultAsync(u => u.Id == userId)
+                       ?? throw new BusinessRuleException("User not found");
+
+            user.PasswordHash = Authentication.PasswordHash(newPassword);
+            user.PasswordResetToken = null;
+            user.PasswordResetExpires = null;
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+        }
+
+        public async Task LockAsync(Guid userId, int lockMinutes)
+        {
+            if (lockMinutes <= 0)
+                throw new BusinessRuleException("Lock duration must be positive");
+
+            var user = await _userRepository.SingleOrDefaultAsync(u => u.Id == userId)
+                       ?? throw new BusinessRuleException("User not found");
+
+            user.LockedUntil = DateTime.UtcNow.AddMinutes(lockMinutes);
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+        }
+
+        public async Task UnlockAsync(Guid userId)
+        {
+            var user = await _userRepository.SingleOrDefaultAsync(u => u.Id == userId)
+                       ?? throw new BusinessRuleException("User not found");
+
+            user.LockedUntil = null;
+            user.FailedLoginAttempts = 0;
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+        }
+
+        public async Task MarkEmailVerifiedAsync(Guid userId)
+        {
+            var user = await _userRepository.SingleOrDefaultAsync(u => u.Id == userId)
+                       ?? throw new BusinessRuleException("User not found");
+
+            user.IsEmailVerified = true;
+            user.EmailVerifiedAt = DateTime.UtcNow;
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+        }
+
+        public async Task MarkPhoneVerifiedAsync(Guid userId)
+        {
+            var user = await _userRepository.SingleOrDefaultAsync(u => u.Id == userId)
+                       ?? throw new BusinessRuleException("User not found");
+
+            user.IsPhoneVerified = true;
+            user.PhoneVerifiedAt = DateTime.UtcNow;
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+        }
+
+        public async Task SetActiveAsync(Guid userId, bool isActive)
+        {
+            var user = await _userRepository.SingleOrDefaultAsync(u => u.Id == userId)
+                       ?? throw new BusinessRuleException("User not found");
+
+            user.IsActive = isActive;
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+        }
+
+        public async Task RevokeSessionsAsync(Guid userId)
+        {
+            var user = await _userRepository.SingleOrDefaultAsync(u => u.Id == userId)
+                       ?? throw new BusinessRuleException("User not found");
+
+            user.RefreshToken = null;
+            user.RefreshTokenExpires = null;
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+        }
+
+        private static void ValidatePassword(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+                throw new BusinessRuleException("Password must be at least 8 characters");
         }
     }
 }

@@ -26,9 +26,9 @@ namespace KSS.Service.Service
 
         #region Find
 
-        public virtual Task<T> FindAsync(Filter id) => _repository.FindAsync(id);
+        public virtual Task<T?> FindAsync(Filter id) => _repository.FindAsync(id);
 
-        public virtual T Find(object id) => _repository.Find(id);
+        public virtual T? Find(object id) => _repository.Find(id);
 
         #endregion
 
@@ -48,17 +48,17 @@ namespace KSS.Service.Service
         public Task<T> SingleUnawaited(IQueryable<T> queryable) => _repository.SingleUnawaited(queryable);
 
 
-        public Task<T> SingleOrDefaultAsync() => _repository.SingleOrDefaultAsync();
-        public Task<T> SingleOrDefaultAsync(Expression<Func<T, bool>> filter) => _repository.SingleOrDefaultAsync(filter);
-        public Task<T> SingleOrDefaultAsync(IQueryable<T> queryable) => _repository.SingleOrDefaultAsync(queryable);
+        public Task<T?> SingleOrDefaultAsync() => _repository.SingleOrDefaultAsync();
+        public Task<T?> SingleOrDefaultAsync(Expression<Func<T, bool>> filter) => _repository.SingleOrDefaultAsync(filter);
+        public Task<T?> SingleOrDefaultAsync(IQueryable<T> queryable) => _repository.SingleOrDefaultAsync(queryable);
 
-        public T SingleOrDefault() => _repository.SingleOrDefault();
-        public T SingleOrDefault(Expression<Func<T, bool>> filter) => _repository.SingleOrDefault(filter);
-        public T SingleOrDefault(IQueryable<T> queryable) => _repository.SingleOrDefault(queryable);
+        public T? SingleOrDefault() => _repository.SingleOrDefault();
+        public T? SingleOrDefault(Expression<Func<T, bool>> filter) => _repository.SingleOrDefault(filter);
+        public T? SingleOrDefault(IQueryable<T> queryable) => _repository.SingleOrDefault(queryable);
 
-        public Task<T> SingleOrDefaultUnawaited() => _repository.SingleOrDefaultUnawaited();
-        public Task<T> SingleOrDefaultUnawaited(Expression<Func<T, bool>> filter) => _repository.SingleOrDefaultUnawaited(filter);
-        public Task<T> SingleOrDefaultUnawaited(IQueryable<T> queryable) => _repository.SingleOrDefaultUnawaited(queryable);
+        public Task<T?> SingleOrDefaultUnawaited() => _repository.SingleOrDefaultUnawaited();
+        public Task<T?> SingleOrDefaultUnawaited(Expression<Func<T, bool>> filter) => _repository.SingleOrDefaultUnawaited(filter);
+        public Task<T?> SingleOrDefaultUnawaited(IQueryable<T> queryable) => _repository.SingleOrDefaultUnawaited(queryable);
 
         #endregion
 
@@ -77,17 +77,17 @@ namespace KSS.Service.Service
         public Task<T> FirstUnawaited(IQueryable<T> queryable) => _repository.FirstUnawaited(queryable);
 
 
-        public Task<T> FirstOrDefaultAsync() => _repository.FirstOrDefaultAsync();
-        public Task<T> FirstOrDefaultAsync(Expression<Func<T, bool>> filter) => _repository.FirstOrDefaultAsync(filter);
-        public Task<T> FirstOrDefaultAsync(IQueryable<T> queryable) => _repository.FirstOrDefaultAsync(queryable);
+        public Task<T?> FirstOrDefaultAsync() => _repository.FirstOrDefaultAsync();
+        public Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> filter) => _repository.FirstOrDefaultAsync(filter);
+        public Task<T?> FirstOrDefaultAsync(IQueryable<T> queryable) => _repository.FirstOrDefaultAsync(queryable);
 
-        public T FirstOrDefault() => _repository.FirstOrDefault();
-        public T FirstOrDefault(Expression<Func<T, bool>> filter) => _repository.FirstOrDefault(filter);
-        public T FirstOrDefault(IQueryable<T> queryable) => _repository.FirstOrDefault(queryable);
+        public T? FirstOrDefault() => _repository.FirstOrDefault();
+        public T? FirstOrDefault(Expression<Func<T, bool>> filter) => _repository.FirstOrDefault(filter);
+        public T? FirstOrDefault(IQueryable<T> queryable) => _repository.FirstOrDefault(queryable);
 
-        public Task<T> FirstOrDefaultUnawaited() => _repository.FirstOrDefaultUnawaited();
-        public Task<T> FirstOrDefaultUnawaited(Expression<Func<T, bool>> filter) => _repository.FirstOrDefaultUnawaited(filter);
-        public Task<T> FirstOrDefaultUnawaited(IQueryable<T> queryable) => _repository.FirstOrDefaultUnawaited(queryable);
+        public Task<T?> FirstOrDefaultUnawaited() => _repository.FirstOrDefaultUnawaited();
+        public Task<T?> FirstOrDefaultUnawaited(Expression<Func<T, bool>> filter) => _repository.FirstOrDefaultUnawaited(filter);
+        public Task<T?> FirstOrDefaultUnawaited(IQueryable<T> queryable) => _repository.FirstOrDefaultUnawaited(queryable);
 
         #endregion
 

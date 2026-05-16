@@ -12,6 +12,13 @@
 - Always ask before running `npm install`, `dotnet add`, `pip install`, or any package manager command
 - Always ask before downloading binaries, browser engines, or system tools
 
+### Show Plan, Get Approval, Then Act (CRITICAL)
+- **NEVER make code changes, file edits, installs, or run commands without first showing a plan and receiving explicit approval**
+- Workflow: (1) propose the plan, (2) wait for user approval ("yes" / "go" / "do it"), (3) only then execute
+- Showing a sample of code or output is NOT a request to implement it — assume it's information unless the user says to act on it
+- This applies to proactive improvements, inferred follow-ups, and "while I'm here" cleanups — they all need approval first
+- Once approved, scope is exactly what was approved — no extra changes
+
 ### Database Connection String Convention (CRITICAL)
 - **ALL services MUST use `ConnectionStrings["DefaultConnection"]`** to read the database connection string
 - Code: `configuration.GetSection("ConnectionStrings")["DefaultConnection"]`
@@ -49,9 +56,19 @@
 - Inject additional repositories via constructor when cross-table operations are needed
 - Use `SingleOrDefault` to check existence before add/update decisions
 
+### Timestamp Convention (CRITICAL)
+- **`CreatedAt` and `UpdatedAt` MUST be set in C# backend code, NEVER by the frontend or SQL defaults**
+- `MainDbContext` overrides `SaveChanges`/`SaveChangesAsync` with a `SetTimestamps()` method that automatically:
+  - On **Add**: sets `CreatedAt = DateTime.UtcNow` and `UpdatedAt = DateTime.UtcNow`
+  - On **Update**: sets `UpdatedAt = DateTime.UtcNow`
+- This applies to ALL entities that have `CreatedAt`/`UpdatedAt` properties — no per-entity code needed
+- Do NOT use `HasDefaultValueSql("GETUTCDATE()")` in EF configurations for timestamps
+- Do NOT send `createdAt`/`updatedAt` from the frontend — the backend handles it
+- All timestamps are stored as UTC (`DateTime.UtcNow`)
+
 ### CLAUDE.md Sync Rule (CRITICAL)
 - **When this CLAUDE.md file is updated, the same changes MUST be copied to ALL other CLAUDE.md files** across the workspace
-- All 8 repos share the same architecture rules: `KSS.Service.Company`, `KSS.Service.Auth`, `KSS.Service.Person`, `KSS.Service.Common`, `KSS.Service.SEBA_ERP_Members`, `KSS.Service.Exchange`, `KSS.Common`, `KSS.Client.Web`
+- All 13 repos share the same architecture rules: `KSS.Service.Company`, `KSS.Service.Auth`, `KSS.Service.Person`, `KSS.Service.Common`, `KSS.Service.SEBA_ERP_Members`, `KSS.Service.Exchange`, `KSS.Service.FileOrchestrator`, `KSS.Service.FileStorage`, `KSS.Service.MarketData`, `KSS.Service.MarketHistory`, `KSS.Service.Portfolio`, `KSS.Common`, `KSS.Client.Web`
 - Only the `## Database` section and the title may differ per repo — all other rules must stay identical
 
 ## Database

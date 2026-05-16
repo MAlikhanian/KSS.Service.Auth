@@ -15,7 +15,7 @@ namespace KSS.Helper
         {
             return PersianDate(value, withTime);
         }
-        public static string ToPersian(this DateTime? value, bool withTime = false, bool emptyMassage = false)
+        public static string? ToPersian(this DateTime? value, bool withTime = false, bool emptyMassage = false)
         {
             if (value.HasValue)
             {

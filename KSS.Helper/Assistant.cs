@@ -29,7 +29,7 @@ namespace KSS.Helper
             };
         }
 
-        public static object FilterGetValue(Filter filter)
+        public static object? FilterGetValue(Filter filter)
         {
             if (filter.Value is JsonElement jsonElement)
             {
@@ -51,6 +51,8 @@ namespace KSS.Helper
                         return jsonElement.GetDateTime();
                     case DataType.Boolean:
                         return jsonElement.GetBoolean();
+                    case DataType.Guid:
+                        return jsonElement.GetGuid();
                 }
             }
             else

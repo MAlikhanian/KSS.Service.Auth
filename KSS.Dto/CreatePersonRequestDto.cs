@@ -4,13 +4,14 @@ namespace KSS.Dto
     {
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
-        public byte SexId { get; set; } = 1; // Default sex ID
-        public short PreferredLanguageId { get; set; } = 1; // Persian language ID (default)
+        public byte SexId { get; set; } = 1;
+        // Persian language Id (fa = 12). Id 1 is Amharic — do not use.
+        // English = 10 is the other active language.
+        public short PreferredLanguageId { get; set; } = 12;
         public string NationalId { get; set; } = string.Empty;
-        public DateTime DateOfBirth { get; set; } = new DateTime(1990, 1, 1); // Default date of birth
-        public short BirthCountryId { get; set; } = 1; // Default country ID
-        public short BirthRegionId { get; set; } = 1; // Default region ID
-        public int BirthCityId { get; set; } = 1; // Default city ID
-        public short NationalityCountryId { get; set; } = 1; // Default nationality country ID
+        public DateTime DateOfBirth { get; set; } = new DateTime(1990, 1, 1);
+        public short BirthCountryId { get; set; } = 1;
+        public short BirthRegionId { get; set; } = 1;
+        public int BirthCityId { get; set; } = 1;
     }
 }

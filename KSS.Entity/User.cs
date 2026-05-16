@@ -10,23 +10,29 @@ namespace KSS.Entity
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public Guid Id { get; set; }
+
         public Guid? PersonId { get; set; }
+
         [Required]
         [MaxLength(50)]
         [Unicode(false)]
         public string Username { get; set; } = string.Empty;
+
         [Required]
         [MaxLength(128)]
         [Unicode(false)]
         public string Email { get; set; } = string.Empty;
+
         [MaxLength(15)]
         [Unicode(false)]
         public string? Phone { get; set; }
+
         public short? CountryId { get; set; }
+
         [Required]
         [MaxLength(256)]
         public string PasswordHash { get; set; } = string.Empty;
-        public bool IsActive { get; set; } = true;
+
         public bool IsEmailVerified { get; set; } = false;
         public DateTime? EmailVerifiedAt { get; set; }
         public bool IsPhoneVerified { get; set; } = false;
@@ -38,11 +44,16 @@ namespace KSS.Entity
         public DateTime? PasswordResetExpires { get; set; }
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpires { get; set; }
+
+        public Guid CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        public Guid? UpdatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public Guid? DeletedBy { get; set; }
+        public DateTime? DeletedAt { get; set; }
+        public bool IsActive { get; set; } = true;
 
         // Navigation properties
         public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     }
 }
-

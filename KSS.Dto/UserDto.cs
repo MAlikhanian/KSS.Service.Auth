@@ -9,7 +9,6 @@ namespace KSS.Dto
         public string? Phone { get; set; }
         public short? CountryId { get; set; }
         public string PasswordHash { get; set; } = string.Empty;
-        public bool IsActive { get; set; }
         public bool IsEmailVerified { get; set; }
         public DateTime? EmailVerifiedAt { get; set; }
         public bool IsPhoneVerified { get; set; }
@@ -21,8 +20,12 @@ namespace KSS.Dto
         public DateTime? PasswordResetExpires { get; set; }
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpires { get; set; }
+        public Guid CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        public Guid? UpdatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public Guid? DeletedBy { get; set; }
+        public DateTime? DeletedAt { get; set; }
+        public bool IsActive { get; set; }
     }
 }
-
