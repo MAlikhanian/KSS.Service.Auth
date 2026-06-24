@@ -167,6 +167,20 @@ namespace KSS.Service.Service
             return user != null ? _mapper.Map<UserDto>(user) : null;
         }
 
+        public async Task<IDictionary<Guid, Guid>> MapPersonsToUsersAsync(IEnumerable<Guid> personIds)
+        {
+            // Materialize input once; tolerate duplicates and Guid.Empty.
+            var ids = personIds?
+                .Where(id => id != Guid.Empty)
+                .Distinct()
+                .ToList() ?? new List<Guid>();
+            if (ids.Count == 0)
+                return new Dictionary<Guid, Guid>();
+
+            var users = await _userRepository.ToListAsync(u => u.PersonId.HasValue && ids.Contains(u.PersonId.Value));
+            return users.ToDictionary(u => u.PersonId!.Value, u => u.Id);
+        }
+
         // ─── Security management (powers the /person/security page) ───
 
         public async Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)

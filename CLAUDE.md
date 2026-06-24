@@ -7,6 +7,12 @@
 - Do not commit after completing tasks, fixing bugs, or making changes
 - Wait for the user to say "commit" before running any git commit command
 
+### No Commits, No Image Builds — Compile-Check Only (CRITICAL — TOP PRIORITY)
+These are hard guardrails and override any inferred follow-up, "while I'm here" cleanup, or perceived readiness.
+- **Do NOT commit any change to git.** Never run `git commit` or create a commit — only the user commits.
+- **Do NOT build or push any container/Docker image on changes, and do NOT deploy.** Never run `docker build` / `docker buildx build` / `docker push`, the `Helper/deployment/*` build scripts, or `kubectl rollout restart`/`apply` — even when the work looks ready.
+- **You may build ONLY to verify there are no code/compile errors** (e.g. `dotnet build`, `npm run build` / `next build`, `tsc`). Such a build is strictly to confirm the code compiles — it must NEVER produce or push an image, commit, or deploy.
+
 ### No Unauthorized Installations (CRITICAL)
 - **NEVER install any application, package, or tool without explicit user confirmation first**
 - Always ask before running `npm install`, `dotnet add`, `pip install`, or any package manager command
@@ -70,6 +76,32 @@
 - **When this CLAUDE.md file is updated, the same changes MUST be copied to ALL other CLAUDE.md files** across the workspace
 - All 13 repos share the same architecture rules: `KSS.Service.Company`, `KSS.Service.Auth`, `KSS.Service.Person`, `KSS.Service.Common`, `KSS.Service.SEBA_ERP_Members`, `KSS.Service.Exchange`, `KSS.Service.FileOrchestrator`, `KSS.Service.FileStorage`, `KSS.Service.MarketData`, `KSS.Service.MarketHistory`, `KSS.Service.Portfolio`, `KSS.Common`, `KSS.Client.Web`
 - Only the `## Database` section and the title may differ per repo — all other rules must stay identical
+
+### GUID Generation (CRITICAL)
+- **ALL GUIDs MUST be version 7 (UUIDv7)** — time-ordered for index locality.
+- **NEVER generate a GUID on the frontend.** No `uuidv4()`, no `crypto.randomUUID()` in any page, component, BFF route, or `services/*` helper. The frontend MUST NOT send entity ids when creating records.
+- **ALL id generation happens in the C# backend.** Preferred: leave the entity `Id` as `Guid.Empty`; the shared `MainDbContext` `SaveChanges`/`SaveChangesAsync` override (`ApplyEntityDefaults()`) stamps any empty `Id` with `Guid.CreateVersion7()`.
+- When the id is needed *before* save (e.g. to link child rows in the same transaction), generate it explicitly with **`Guid.CreateVersion7()`**.
+- **NEVER use `Guid.NewGuid()`** — it produces a v4 GUID. Replace every occurrence with `Guid.CreateVersion7()` (.NET 9+).
+- Entities keep `[DatabaseGenerated(DatabaseGeneratedOption.None)]` — the app supplies the v7 id, not SQL Server.
+
+### Non-GUID Primary Keys / Lookup Tables (CRITICAL)
+- Lookup / reference tables (small fixed value sets — e.g. `*Type`, `*Label`, `*Status`) do **NOT** use a GUID primary key. They keep a small integer key (`tinyint` / `int`).
+- For these tables the `Id` is owned by the **database side**, never the backend. The backend MUST NOT set or generate the `Id` — no `Guid.CreateVersion7()`, no manual value. Map the entity `[DatabaseGenerated(DatabaseGeneratedOption.Identity)]` so EF leaves the `Id` to the database.
+- The backend generates **GUIDs only** (v7, for entities whose primary key is a GUID — see GUID Generation above). It never produces the id for a non-GUID lookup table.
+
+### DTO Per Operation (CRITICAL)
+- **One DTO per operation** — never reuse a single DTO for create + update + read.
+- **`*InsertDto`** — create. Contains NO backend-generated GUID (no own id, no FK to a row created in the same call). Reference GUIDs to existing rows are allowed, in the body.
+- **`*UpdateDto`** — update. The id + only editable fields — never audit/computed fields (the backend owns `CreatedAt`/`UpdatedAt`).
+- **`*ViewDto`** — read. The full shape (id, audit dates, computed/nested fields).
+- **Delete** takes only the key (id), not a full DTO.
+- Fill the `BaseService<TEntity, TAddDto, TUpdateDto, TListDto>` slots with DISTINCT DTOs — never the same DTO in all three.
+
+### Service-to-Service URL Configuration (CRITICAL)
+- Cross-service HTTP calls MUST read the target base URL from a **nested** config key: `Services:<TargetName>:BaseUrl` (e.g. `Services:Person:BaseUrl`, `Services:Company:BaseUrl`). Do NOT use the flat `Services:<Name>Url` form.
+- The value MUST point to the target’s **Kubernetes Service** DNS, not the Deployment/pod name: `http://<target>-service-service.<target-namespace>.svc.cluster.local` (default port 80 — do NOT append `:8000`, that is the pod’s container port). Dev: `http://localhost:<targetDevPort>`.
+- Wire it with a typed client — `AddHttpClient<IXxxApiClient, XxxApiClient>(c => c.BaseAddress = new Uri(configuration["Services:Xxx:BaseUrl"]))` — that forwards the caller’s Bearer token via a DelegatingHandler. Cross-service calls MUST degrade gracefully (do NOT use `EnsureSuccessStatusCode()` that turns a downstream error into an HTTP 500).
 
 ## Database
 - SQL Server: `KSS_Auth_Prod` / `KSS_Auth_Dev`

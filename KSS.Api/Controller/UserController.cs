@@ -128,6 +128,21 @@ namespace KSS.Api.Controller
             return Ok(user);
         }
 
+        /// <summary>
+        /// POST /Api/User/MapPersonsToUsers — bulk version of ByPersonId. Body:
+        /// { personIds: [...] }. Returns a map of PersonId → UserId (only inputs
+        /// that have a User row appear in the response). Powers dashboard report
+        /// endpoints in Company and Person services. Requires authentication;
+        /// available to any logged-in user (no specific permission).
+        /// </summary>
+        [HttpPost]
+        [Authorize]
+        public async Task<ActionResult<IDictionary<Guid, Guid>>> MapPersonsToUsers([FromBody] PersonsToUsersRequestDto dto)
+        {
+            var map = await _userService.MapPersonsToUsersAsync(dto?.PersonIds ?? new List<Guid>());
+            return Ok(map);
+        }
+
         /// <summary>PUT /Api/User/ChangePassword — self-service password change.</summary>
         [HttpPut]
         [Authorize]

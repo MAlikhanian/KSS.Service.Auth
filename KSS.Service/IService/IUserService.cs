@@ -11,6 +11,13 @@ namespace KSS.Service.IService
         Task<UserDto?> GetByEmailAsync(string email);
         Task<UserDto?> GetByPersonIdAsync(Guid personId);
 
+        /// <summary>
+        /// Bulk lookup: for the given PersonIds, return a map PersonId → UserId
+        /// for every input that has a User row. Used by dashboard report
+        /// endpoints in Company and Person services.
+        /// </summary>
+        Task<IDictionary<Guid, Guid>> MapPersonsToUsersAsync(IEnumerable<Guid> personIds);
+
         // Security management — used by the /person/security page.
         Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword);
         Task AdminResetPasswordAsync(Guid userId, string newPassword);
