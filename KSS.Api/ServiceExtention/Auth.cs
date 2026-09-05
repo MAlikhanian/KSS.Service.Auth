@@ -31,6 +31,9 @@ namespace KSS.Api.ServiceExtention
             // Register Person API client (uses APIClient helper internally)
             services.AddScoped<IPersonApiClient, PersonApiClient>();
 
+            // Resolves the signup hostname to its Company from TENANT_HOSTS.
+            services.AddSingleton<ITenantHostResolver, TenantHostResolver>();
+
             // Register Captcha service client (verifies altcha payloads against KSS.Service.Captcha)
             services.AddScoped<ICaptchaClient, CaptchaClient>();
 

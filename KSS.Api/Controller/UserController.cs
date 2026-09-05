@@ -13,17 +13,27 @@ namespace KSS.Api.Controller
     {
         private const string CaptchaHeaderName = "X-Captcha-Payload";
 
+        /// <summary>
+        /// Hostname the signup was served from, set by the Shell BFF from the real
+        /// request Host. Used only to look the host up in Auth's own TENANT_HOSTS
+        /// config — an unknown or forged value resolves to null and simply yields no
+        /// company membership, never a fallback to some default tenant.
+        /// </summary>
+        private const string TenantHostHeaderName = "X-Tenant-Host";
+
         private readonly IUserService _userService;
         private readonly IRoleService _roleService;
         private readonly ICaptchaClient _captchaClient;
         private readonly IConfiguration _configuration;
+        private readonly ITenantHostResolver _tenantHostResolver;
 
-        public UserController(IUserService userService, IRoleService roleService, ICaptchaClient captchaClient, IConfiguration configuration)
+        public UserController(IUserService userService, IRoleService roleService, ICaptchaClient captchaClient, IConfiguration configuration, ITenantHostResolver tenantHostResolver)
         {
             _userService = userService;
             _roleService = roleService;
             _captchaClient = captchaClient;
             _configuration = configuration;
+            _tenantHostResolver = tenantHostResolver;
         }
 
         [HttpPost]
@@ -35,7 +45,15 @@ namespace KSS.Api.Controller
 
             try
             {
-                var user = await _userService.RegisterAsync(request);
+                // Resolve the tenant SERVER-SIDE. The company is never read from the
+                // request body: Register is [AllowAnonymous], so a caller-supplied
+                // company id would let anyone register into any tenant.
+                var tenantHost = Request.Headers.TryGetValue(TenantHostHeaderName, out var hostValue)
+                    ? hostValue.ToString()
+                    : null;
+                var tenantCompanyId = _tenantHostResolver.ResolveCompanyId(tenantHost);
+
+                var user = await _userService.RegisterAsync(request, tenantCompanyId);
                 return Ok(user);
             }
             catch (BusinessRuleException ex)

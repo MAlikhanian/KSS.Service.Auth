@@ -6,6 +6,10 @@ metadata:
   labels:
     app: kss-auth-service
     version: v1.0.0
+  annotations:
+    keel.sh/policy: force
+    keel.sh/match-tag: "true"
+    keel.sh/trigger: poll
 spec:
   replicas: 1
   strategy:
@@ -43,6 +47,15 @@ spec:
           value: "Information"
         - name: Logging__LogLevel__Microsoft.AspNetCore
           value: "Warning"
+        # Host -> Company for self-registration. A user who signs up on a
+        # tenant hostname is assigned to that tenant's company; the Shell BFF
+        # sends the host as X-Tenant-Host and Auth resolves it HERE, server-side.
+        # Never taken from the request body: Register is [AllowAnonymous].
+        # An unknown host resolves to null and creates no membership.
+        # Auth has no ConfigMap, so this follows the inline-env pattern already
+        # used above rather than the Shell's configMapKeyRef style.
+        - name: TENANT_HOSTS
+          value: '{"erp.seba.ir":"019f317a-12ba-764f-b19b-e064e36b4be8","members.sebaoffice.ir":"019f317a-12ba-764f-b19b-e064e36b4be8","nerp.sajoffice.ir":"019f0e6c-9fbc-78cf-9202-fa932a9878f7","erp.mpfoffice.ir":"019f7a3e-1d43-7bcb-a7f3-eb97572e2e02","spmoffice.ir":"01a04744-68ae-7aef-b9d0-b5fb31d7a80c"}'
         resources:
           requests:
             memory: "256Mi"

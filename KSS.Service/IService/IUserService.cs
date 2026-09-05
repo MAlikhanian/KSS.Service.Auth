@@ -5,7 +5,12 @@ namespace KSS.Service.IService
 {
     public interface IUserService : IBaseService<User, UserDto, UserDto, UserDto>
     {
-        Task<UserDto> RegisterAsync(RegisterRequestDto request);
+        /// <summary>
+        /// Registers a user. <paramref name="tenantCompanyId"/> is the company bound
+        /// to the hostname the request arrived on, resolved SERVER-SIDE by the
+        /// controller — never taken from the request body. Null means no tenant.
+        /// </summary>
+        Task<UserDto> RegisterAsync(RegisterRequestDto request, Guid? tenantCompanyId = null);
         Task<AuthResponseDto> LoginAsync(LoginRequestDto request, string jwtSecret);
         Task<UserDto?> GetByUsernameAsync(string username);
         Task<UserDto?> GetByEmailAsync(string email);

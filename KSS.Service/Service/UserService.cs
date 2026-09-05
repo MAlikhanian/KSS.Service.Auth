@@ -19,7 +19,7 @@ namespace KSS.Service.Service
             _personApiClient = personApiClient;
         }
 
-        public async Task<UserDto> RegisterAsync(RegisterRequestDto request)
+        public async Task<UserDto> RegisterAsync(RegisterRequestDto request, Guid? tenantCompanyId = null)
         {
             // 1. Check username not exists
             var existingUserByUsername = await _userRepository.SingleOrDefaultAsync(u => u.Username == request.Username);
@@ -52,7 +52,11 @@ namespace KSS.Service.Service
                 BirthCountryId = request.CountryId ?? 1,
             };
 
-            var createdPerson = await _personApiClient.CreatePersonAsync(createPersonRequest);
+            // Tenant membership: when the signup arrived on a tenant's hostname, the
+            // company travels with the Person call as X-Company-Id and Person's own
+            // auto-assign creates the CompanyPerson row. Unknown host => null => no
+            // membership, exactly as before.
+            var createdPerson = await _personApiClient.CreatePersonAsync(createPersonRequest, tenantCompanyId);
 
             // 5. Insert user with PersonId — Id, CreatedBy, CreatedAt are set by ApplyEntityDefaults
             var user = new User
@@ -136,13 +140,13 @@ namespace KSS.Service.Service
 
             // Generate JWT token with roles, role Ids, permissions, and PersonId.
             // RoleIds power the Person service's RoleAccess lookups.
-            var token = Authentication.JwtTokenGenerate(jwtSecret, user.Username, roles, permissions, user.PersonId, roleIds, 60);
+            var token = Authentication.JwtTokenGenerate(jwtSecret, user.Username, roles, permissions, user.PersonId, roleIds, 180);
 
             return new AuthResponseDto
             {
                 Token = token,
                 RefreshToken = refreshToken,
-                TokenExpires = DateTime.UtcNow.AddMinutes(60),
+                TokenExpires = DateTime.UtcNow.AddMinutes(180),
                 User = _mapper.Map<UserDto>(user),
                 Roles = roles,
                 Permissions = permissions

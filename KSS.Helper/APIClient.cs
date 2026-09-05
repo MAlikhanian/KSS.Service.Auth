@@ -84,11 +84,32 @@ namespace KSS.Helper
             }
         }
         public async Task<R> Post<R, T>(string url, T data)
+            => await Post<R, T>(url, data, null);
+
+        /// <summary>
+        /// POST with optional per-request headers. The headers are set on the
+        /// HttpRequestMessage rather than on DefaultRequestHeaders: this client
+        /// instance is reused, so a default would leak onto unrelated calls.
+        /// </summary>
+        public async Task<R> Post<R, T>(string url, T data, IReadOnlyDictionary<string, string>? headers)
         {
             HttpResponseMessage result;
             try
             {
-                result = await httpClient.PostAsJsonAsync(url, data);
+                if (headers is null || headers.Count == 0)
+                {
+                    result = await httpClient.PostAsJsonAsync(url, data);
+                }
+                else
+                {
+                    using var request = new HttpRequestMessage(HttpMethod.Post, url)
+                    {
+                        Content = JsonContent.Create(data),
+                    };
+                    foreach (var kv in headers)
+                        request.Headers.TryAddWithoutValidation(kv.Key, kv.Value);
+                    result = await httpClient.SendAsync(request);
+                }
             }
             catch (Exception ex)
             {

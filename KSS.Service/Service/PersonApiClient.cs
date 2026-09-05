@@ -18,7 +18,7 @@ namespace KSS.Service.Service
             _apiClient = new APIClient(personApiUrl);
         }
 
-        public async Task<PersonDto> CreatePersonAsync(CreatePersonRequestDto request)
+        public async Task<PersonDto> CreatePersonAsync(CreatePersonRequestDto request, Guid? tenantCompanyId = null)
         {
             // Person's CreatePersonWithTranslationDto expects names inside a
             // Translations array, not flat fields. The signup form collects a
@@ -48,7 +48,13 @@ namespace KSS.Service.Service
 
             try
             {
-                return await _apiClient.Post<PersonDto, object>("Api/Person/AddWithTranslation", payload);
+                // Person's PersonService assigns the new person to X-Company-Id when
+                // present. Sent ONLY here, and only for a host Auth itself resolved.
+                var headers = tenantCompanyId is Guid companyId
+                    ? new Dictionary<string, string> { ["X-Company-Id"] = companyId.ToString() }
+                    : null;
+
+                return await _apiClient.Post<PersonDto, object>("Api/Person/AddWithTranslation", payload, headers);
             }
             catch (UpstreamApiException ex) when (ex.Status >= 400 && ex.Status < 500)
             {
