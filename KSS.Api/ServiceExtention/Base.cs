@@ -1,3 +1,4 @@
+using KSS.Api.Authorization;
 using KSS.Helper;
 using KSS.Helper.Authorization;
 using Microsoft.AspNetCore.Authorization;
@@ -16,6 +17,7 @@ namespace KSS.Api.ServiceExtention
             serviceCollection.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
             serviceCollection.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
             serviceCollection.AddScoped<PermissionAuthorizationFilter>();
+            serviceCollection.AddScoped<RequireExplicitAuthorizationFilter>();
 
             return serviceCollection;
         }

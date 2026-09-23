@@ -1,6 +1,8 @@
 using System.Security.Claims;
+using KSS.Api.Authorization;
 using KSS.Dto;
 using KSS.Helper;
+using KSS.Helper.CustomAttribute;
 using KSS.Service.IService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +11,7 @@ namespace KSS.Api.Controller
 {
     [ApiController]
     [Route("Api/[controller]/[action]")]
+    [ServiceFilter(typeof(RequireExplicitAuthorizationFilter))]
     public class UserController : ControllerBase
     {
         private const string CaptchaHeaderName = "X-Captcha-Payload";
@@ -110,6 +113,7 @@ namespace KSS.Api.Controller
 
         [HttpGet]
         [Authorize]
+        [CallerScoped]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
         {
             try
@@ -138,7 +142,7 @@ namespace KSS.Api.Controller
 
         /// <summary>GET /Api/User/ByPersonId/{personId} — returns the User row tied to a PersonId, or 404.</summary>
         [HttpGet("{personId}")]
-        [Authorize]
+        [HasPermission("Person.Security.Read")]
         public async Task<ActionResult<UserDto>> ByPersonId(Guid personId)
         {
             var user = await _userService.GetByPersonIdAsync(personId);
@@ -155,6 +159,7 @@ namespace KSS.Api.Controller
         /// </summary>
         [HttpPost]
         [Authorize]
+        [AuthenticatedOnly("Resolves caller-supplied person ids to user ids; returns no account detail.")]
         public async Task<ActionResult<IDictionary<Guid, Guid>>> MapPersonsToUsers([FromBody] PersonsToUsersRequestDto dto)
         {
             var map = await _userService.MapPersonsToUsersAsync(dto?.PersonIds ?? new List<Guid>());
@@ -164,6 +169,7 @@ namespace KSS.Api.Controller
         /// <summary>PUT /Api/User/ChangePassword — self-service password change.</summary>
         [HttpPut]
         [Authorize]
+        [CallerScoped]
         public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
         {
             var callerUserId = GetCallerUserId();
@@ -174,7 +180,7 @@ namespace KSS.Api.Controller
 
         /// <summary>PUT /Api/User/AdminResetPassword — admin override, no current password required.</summary>
         [HttpPut]
-        [Authorize]
+        [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> AdminResetPassword([FromBody] AdminResetPasswordDto dto)
         {
             await _userService.AdminResetPasswordAsync(dto.UserId, dto.NewPassword);
@@ -183,7 +189,7 @@ namespace KSS.Api.Controller
 
         /// <summary>POST /Api/User/Lock/{userId} — admin lock for N minutes.</summary>
         [HttpPost("{userId}")]
-        [Authorize]
+        [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> Lock(Guid userId, [FromBody] LockUserDto dto)
         {
             await _userService.LockAsync(userId, dto.LockMinutes);
@@ -192,7 +198,7 @@ namespace KSS.Api.Controller
 
         /// <summary>POST /Api/User/Unlock/{userId} — clear lock + reset failed attempts.</summary>
         [HttpPost("{userId}")]
-        [Authorize]
+        [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> Unlock(Guid userId)
         {
             await _userService.UnlockAsync(userId);
@@ -201,7 +207,7 @@ namespace KSS.Api.Controller
 
         /// <summary>POST /Api/User/MarkEmailVerified/{userId} — admin mark email verified.</summary>
         [HttpPost("{userId}")]
-        [Authorize]
+        [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> MarkEmailVerified(Guid userId)
         {
             await _userService.MarkEmailVerifiedAsync(userId);
@@ -210,7 +216,7 @@ namespace KSS.Api.Controller
 
         /// <summary>POST /Api/User/MarkPhoneVerified/{userId} — admin mark phone verified.</summary>
         [HttpPost("{userId}")]
-        [Authorize]
+        [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> MarkPhoneVerified(Guid userId)
         {
             await _userService.MarkPhoneVerifiedAsync(userId);
@@ -219,7 +225,7 @@ namespace KSS.Api.Controller
 
         /// <summary>PUT /Api/User/SetActive/{userId} — admin toggle IsActive.</summary>
         [HttpPut("{userId}")]
-        [Authorize]
+        [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> SetActive(Guid userId, [FromBody] SetActiveDto dto)
         {
             await _userService.SetActiveAsync(userId, dto.IsActive);
@@ -228,7 +234,7 @@ namespace KSS.Api.Controller
 
         /// <summary>POST /Api/User/RevokeSessions/{userId} — clear refresh token (forces logout).</summary>
         [HttpPost("{userId}")]
-        [Authorize]
+        [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> RevokeSessions(Guid userId)
         {
             await _userService.RevokeSessionsAsync(userId);
@@ -237,7 +243,7 @@ namespace KSS.Api.Controller
 
         /// <summary>GET /Api/User/UserRoles/{userId} — list roles assigned to the user.</summary>
         [HttpGet("{userId}")]
-        [Authorize]
+        [HasPermission("Person.Security.Read")]
         public async Task<ActionResult<List<string>>> UserRoles(Guid userId)
         {
             var roles = await _roleService.GetUserRoleNamesAsync(userId);
@@ -246,7 +252,7 @@ namespace KSS.Api.Controller
 
         /// <summary>PUT /Api/User/AssignRoles — replace role assignments for a user.</summary>
         [HttpPut]
-        [Authorize]
+        [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> AssignRoles([FromBody] AssignRoleRequestDto request)
         {
             await _roleService.AssignRolesToUserAsync(request);
