@@ -183,7 +183,9 @@ namespace KSS.Api.Controller
         [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> AdminResetPassword([FromBody] AdminResetPasswordDto dto)
         {
-            await _userService.AdminResetPasswordAsync(dto.UserId, dto.NewPassword);
+            var callerUserId = GetCallerUserId();
+            if (callerUserId == null) return Unauthorized();
+            await _userService.AdminResetPasswordAsync(callerUserId.Value, dto.UserId, dto.NewPassword);
             return NoContent();
         }
 
@@ -192,7 +194,9 @@ namespace KSS.Api.Controller
         [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> Lock(Guid userId, [FromBody] LockUserDto dto)
         {
-            await _userService.LockAsync(userId, dto.LockMinutes);
+            var callerUserId = GetCallerUserId();
+            if (callerUserId == null) return Unauthorized();
+            await _userService.LockAsync(callerUserId.Value, userId, dto.LockMinutes);
             return NoContent();
         }
 
@@ -201,7 +205,9 @@ namespace KSS.Api.Controller
         [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> Unlock(Guid userId)
         {
-            await _userService.UnlockAsync(userId);
+            var callerUserId = GetCallerUserId();
+            if (callerUserId == null) return Unauthorized();
+            await _userService.UnlockAsync(callerUserId.Value, userId);
             return NoContent();
         }
 
@@ -210,7 +216,9 @@ namespace KSS.Api.Controller
         [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> MarkEmailVerified(Guid userId)
         {
-            await _userService.MarkEmailVerifiedAsync(userId);
+            var callerUserId = GetCallerUserId();
+            if (callerUserId == null) return Unauthorized();
+            await _userService.MarkEmailVerifiedAsync(callerUserId.Value, userId);
             return NoContent();
         }
 
@@ -219,7 +227,9 @@ namespace KSS.Api.Controller
         [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> MarkPhoneVerified(Guid userId)
         {
-            await _userService.MarkPhoneVerifiedAsync(userId);
+            var callerUserId = GetCallerUserId();
+            if (callerUserId == null) return Unauthorized();
+            await _userService.MarkPhoneVerifiedAsync(callerUserId.Value, userId);
             return NoContent();
         }
 
@@ -228,7 +238,9 @@ namespace KSS.Api.Controller
         [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> SetActive(Guid userId, [FromBody] SetActiveDto dto)
         {
-            await _userService.SetActiveAsync(userId, dto.IsActive);
+            var callerUserId = GetCallerUserId();
+            if (callerUserId == null) return Unauthorized();
+            await _userService.SetActiveAsync(callerUserId.Value, userId, dto.IsActive);
             return NoContent();
         }
 
@@ -237,7 +249,9 @@ namespace KSS.Api.Controller
         [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> RevokeSessions(Guid userId)
         {
-            await _userService.RevokeSessionsAsync(userId);
+            var callerUserId = GetCallerUserId();
+            if (callerUserId == null) return Unauthorized();
+            await _userService.RevokeSessionsAsync(callerUserId.Value, userId);
             return NoContent();
         }
 
@@ -255,7 +269,9 @@ namespace KSS.Api.Controller
         [HasPermission("Person.Security.Modify")]
         public async Task<ActionResult> AssignRoles([FromBody] AssignRoleRequestDto request)
         {
-            await _roleService.AssignRolesToUserAsync(request);
+            var callerUserId = GetCallerUserId();
+            if (callerUserId == null) return Unauthorized();
+            await _roleService.AssignRolesToUserAsync(callerUserId.Value, request);
             return NoContent();
         }
 

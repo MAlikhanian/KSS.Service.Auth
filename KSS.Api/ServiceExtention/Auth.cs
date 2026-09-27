@@ -26,6 +26,12 @@ namespace KSS.Api.ServiceExtention
             services.AddScoped<IBaseRepository<Permission>, PermissionRepository>();
             services.AddScoped<IRoleService, RoleService>();
             services.AddScoped<IPermissionService, PermissionService>();
+
+            // Account administration: live permission-set reads and the caller-vs-target
+            // checks. Scoped so they share the request's DbContext (and its transaction).
+            services.AddScoped<IPrivilegeComparer, PrivilegeComparer>();
+            services.AddScoped<IAccountAdministrationGuard, AccountAdministrationGuard>();
+            services.AddSingleton(new AccountAdministrationOptions());
             // PermissionController has its own dedicated read-only API; no BaseService<Permission> binding needed.
 
             // Register Person API client (uses APIClient helper internally)

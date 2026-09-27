@@ -6,6 +6,7 @@ using KSS.Helper;
 using KSS.Repository.IRepository;
 using KSS.Service.IService;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace KSS.Service.Service
 {
@@ -18,11 +19,13 @@ namespace KSS.Service.Service
     {
         private readonly IRoleRepository _roleRepository;
         private readonly MainDbContext _dbContext;
+        private readonly IAccountAdministrationGuard _administrationGuard;
 
-        public RoleService(IMapper mapper, IRoleRepository repository, MainDbContext dbContext) : base(mapper, repository)
+        public RoleService(IMapper mapper, IRoleRepository repository, MainDbContext dbContext, IAccountAdministrationGuard administrationGuard) : base(mapper, repository)
         {
             _roleRepository = repository;
             _dbContext = dbContext;
+            _administrationGuard = administrationGuard;
         }
 
         public async Task<List<RoleDto>> GetAllRolesWithPermissionsAsync()
@@ -81,8 +84,16 @@ namespace KSS.Service.Service
                 .ToListAsync();
         }
 
-        public async Task AssignRolesToUserAsync(AssignRoleRequestDto request)
+        public async Task AssignRolesToUserAsync(Guid callerUserId, AssignRoleRequestDto request)
         {
+            // Serializable, so the permission checks and the replacement act on one
+            // consistent state and a concurrent role change cannot land between them.
+            await using var transaction = _dbContext.Database.IsRelational()
+                ? await _dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable)
+                : null;
+
+            await _administrationGuard.EnsureMayAssignRolesAsync(callerUserId, request.UserId, request.RoleIds);
+
             var user = await _dbContext.Users.FindAsync(request.UserId);
             if (user == null)
                 throw new BusinessRuleException($"User with ID '{request.UserId}' not found");
@@ -100,6 +111,9 @@ namespace KSS.Service.Service
             });
             await _dbContext.UserRoles.AddRangeAsync(userRoles);
             await _dbContext.SaveChangesAsync();
+
+            if (transaction != null)
+                await transaction.CommitAsync();
         }
 
     }

@@ -25,12 +25,15 @@ namespace KSS.Service.IService
 
         // Security management — used by the /person/security page.
         Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword);
-        Task AdminResetPasswordAsync(Guid userId, string newPassword);
-        Task LockAsync(Guid userId, int lockMinutes);
-        Task UnlockAsync(Guid userId);
-        Task MarkEmailVerifiedAsync(Guid userId);
-        Task MarkPhoneVerifiedAsync(Guid userId);
-        Task SetActiveAsync(Guid userId, bool isActive);
-        Task RevokeSessionsAsync(Guid userId);
+
+        // Administration of another user's account. Each checks, through
+        // IAccountAdministrationGuard, that the caller may act on the target.
+        Task AdminResetPasswordAsync(Guid callerUserId, Guid userId, string newPassword);
+        Task LockAsync(Guid callerUserId, Guid userId, int lockMinutes);
+        Task UnlockAsync(Guid callerUserId, Guid userId);
+        Task MarkEmailVerifiedAsync(Guid callerUserId, Guid userId);
+        Task MarkPhoneVerifiedAsync(Guid callerUserId, Guid userId);
+        Task SetActiveAsync(Guid callerUserId, Guid userId, bool isActive);
+        Task RevokeSessionsAsync(Guid callerUserId, Guid userId);
     }
 }

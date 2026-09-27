@@ -12,11 +12,13 @@ namespace KSS.Service.Service
     {
         private readonly IUserRepository _userRepository;
         private readonly IPersonApiClient _personApiClient;
+        private readonly IAccountAdministrationGuard _administrationGuard;
 
-        public UserService(IMapper mapper, IUserRepository repository, IPersonApiClient personApiClient) : base(mapper, repository)
+        public UserService(IMapper mapper, IUserRepository repository, IPersonApiClient personApiClient, IAccountAdministrationGuard administrationGuard) : base(mapper, repository)
         {
             _userRepository = repository;
             _personApiClient = personApiClient;
+            _administrationGuard = administrationGuard;
         }
 
         public async Task<UserDto> RegisterAsync(RegisterRequestDto request, Guid? tenantCompanyId = null)
@@ -204,8 +206,9 @@ namespace KSS.Service.Service
             await _userRepository.SaveChangesAsync();
         }
 
-        public async Task AdminResetPasswordAsync(Guid userId, string newPassword)
+        public async Task AdminResetPasswordAsync(Guid callerUserId, Guid userId, string newPassword)
         {
+            await _administrationGuard.EnsureMayActOnAsync(callerUserId, userId, AdminOperation.AdminResetPassword);
             ValidatePassword(newPassword);
 
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Id == userId)
@@ -218,8 +221,9 @@ namespace KSS.Service.Service
             await _userRepository.SaveChangesAsync();
         }
 
-        public async Task LockAsync(Guid userId, int lockMinutes)
+        public async Task LockAsync(Guid callerUserId, Guid userId, int lockMinutes)
         {
+            await _administrationGuard.EnsureMayActOnAsync(callerUserId, userId, AdminOperation.Lock);
             if (lockMinutes <= 0)
                 throw new BusinessRuleException("Lock duration must be positive");
 
@@ -231,8 +235,9 @@ namespace KSS.Service.Service
             await _userRepository.SaveChangesAsync();
         }
 
-        public async Task UnlockAsync(Guid userId)
+        public async Task UnlockAsync(Guid callerUserId, Guid userId)
         {
+            await _administrationGuard.EnsureMayActOnAsync(callerUserId, userId, AdminOperation.Unlock);
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Id == userId)
                        ?? throw new BusinessRuleException("User not found");
 
@@ -242,8 +247,9 @@ namespace KSS.Service.Service
             await _userRepository.SaveChangesAsync();
         }
 
-        public async Task MarkEmailVerifiedAsync(Guid userId)
+        public async Task MarkEmailVerifiedAsync(Guid callerUserId, Guid userId)
         {
+            await _administrationGuard.EnsureMayActOnAsync(callerUserId, userId, AdminOperation.MarkEmailVerified);
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Id == userId)
                        ?? throw new BusinessRuleException("User not found");
 
@@ -253,8 +259,9 @@ namespace KSS.Service.Service
             await _userRepository.SaveChangesAsync();
         }
 
-        public async Task MarkPhoneVerifiedAsync(Guid userId)
+        public async Task MarkPhoneVerifiedAsync(Guid callerUserId, Guid userId)
         {
+            await _administrationGuard.EnsureMayActOnAsync(callerUserId, userId, AdminOperation.MarkPhoneVerified);
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Id == userId)
                        ?? throw new BusinessRuleException("User not found");
 
@@ -264,8 +271,11 @@ namespace KSS.Service.Service
             await _userRepository.SaveChangesAsync();
         }
 
-        public async Task SetActiveAsync(Guid userId, bool isActive)
+        public async Task SetActiveAsync(Guid callerUserId, Guid userId, bool isActive)
         {
+            await _administrationGuard.EnsureMayActOnAsync(callerUserId, userId, AdminOperation.SetActive);
+            if (!isActive)
+                await _administrationGuard.EnsureMayDeactivateAsync(userId);
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Id == userId)
                        ?? throw new BusinessRuleException("User not found");
 
@@ -274,8 +284,9 @@ namespace KSS.Service.Service
             await _userRepository.SaveChangesAsync();
         }
 
-        public async Task RevokeSessionsAsync(Guid userId)
+        public async Task RevokeSessionsAsync(Guid callerUserId, Guid userId)
         {
+            await _administrationGuard.EnsureMayActOnAsync(callerUserId, userId, AdminOperation.RevokeSessions);
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Id == userId)
                        ?? throw new BusinessRuleException("User not found");
 

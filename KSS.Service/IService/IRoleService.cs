@@ -12,6 +12,10 @@ namespace KSS.Service.IService
         Task<List<RoleDto>> GetAllRolesWithPermissionsAsync();
         Task<List<string>> GetUserRoleNamesAsync(Guid userId);
         Task<List<string>> GetUserPermissionNamesAsync(Guid userId);
-        Task AssignRolesToUserAsync(AssignRoleRequestDto request);
+        /// <summary>
+        /// Replaces the target's role assignments, after checking through
+        /// IAccountAdministrationGuard that the caller may do so.
+        /// </summary>
+        Task AssignRolesToUserAsync(Guid callerUserId, AssignRoleRequestDto request);
     }
 }
