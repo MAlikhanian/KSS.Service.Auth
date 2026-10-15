@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kss-auth-service
+  namespace: kss-auth-service
+  labels:
+    app: kss-auth-service
+    version: v1.0.0
+  annotations:
+    keel.sh/policy: force
+    keel.sh/match-tag: "true"
+    keel.sh/trigger: poll
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: kss-auth-service
+  template:
+    metadata:
+      labels:
+        app: kss-auth-service
+        version: v1.0.0
+    spec:
+      imagePullSecrets:
+      - name: docker-secret
+      containers:
+      - name: kss-auth-service
+        image: docker-hosted.sebaoffice.ir/kss-auth-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:8000"
+        - name: TZ
+          value: "UTC"
+        - name: Logging__LogLevel__Default
+          value: "Information"
+        - name: Logging__LogLevel__Microsoft.AspNetCore
+          value: "Warning"
+        # Host -> Company for self-registration. A user who signs up on a
+        # tenant hostname is assigned to that tenant's company; the Shell BFF
+        # sends the host as X-Tenant-Host and Auth resolves it HERE, server-side.
+        # Never taken from the request body: Register is [AllowAnonymous].
+        # An unknown host resolves to null and creates no membership.
+        # Auth has no ConfigMap, so this follows the inline-env pattern already
+        # used above rather than the Shell's configMapKeyRef style.
+        - name: TENANT_HOSTS
+          value: '{"erp.seba.ir":"019f317a-12ba-764f-b19b-e064e36b4be8","members.sebaoffice.ir":"019f317a-12ba-764f-b19b-e064e36b4be8","nerp.sajoffice.ir":"019f0e6c-9fbc-78cf-9202-fa932a9878f7","erp.mpfoffice.ir":"019f7a3e-1d43-7bcb-a7f3-eb97572e2e02","spmoffice.ir":"01a04744-68ae-7aef-b9d0-b5fb31d7a80c"}'
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          capabilities:
+            drop:
+            - ALL
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kss-auth-service-service
+  namespace: kss-auth-service
+  labels:
+    app: kss-auth-service
+  annotations:
+    haproxy.org/cookie-persistence: "auth-session"
+spec:
+  selector:
+    app: kss-auth-service
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP
+  sessionAffinity: None
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kss-auth-service-ingress
+  namespace: kss-auth-service
+  annotations:
+    haproxy.org/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    acme.cert-manager.io/http01-edit-in-place: "true"
+
+    kubernetes.io/ingress.class: haproxy
+    haproxy.org/cookie-persistence: "auth-session"
+    haproxy.org/timeout-client: "10h"
+    haproxy.org/timeout-server: "10h"
+
+spec:
+  ingressClassName: haproxy
+  tls:
+  - hosts:
+    - auth.api.sebaoffice.ir
+    secretName: kss-auth-service-tls
+  rules:
+  - host: auth.api.sebaoffice.ir
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kss-auth-service-service
+            port:
+              number: 80

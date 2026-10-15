@@ -1,0 +1,45 @@
+dotnet build
+dotnet run
+
+# Step 1: Login to Docker registry
+docker login docker-hosted.sebaoffice.ir
+
+# Step 2: Build the Docker image
+docker build -t docker-hosted.sebaoffice.ir/kss-auth-service:latest .
+
+# Alternative: Build and push in one command (if using buildx)
+docker buildx build --push -t docker-hosted.sebaoffice.ir/kss-auth-service:latest .
+
+# Step 3: Push the image to registry
+docker push docker-hosted.sebaoffice.ir/kss-auth-service:latest
+
+# Step 4: Create namespace (if it doesn't exist)
+kubectl create namespace kss-auth-service
+
+# Step 5: Deploy/restart the application
+kubectl rollout restart deployment/kss-auth-service -n kss-auth-service
+
+# Remember: Deploying to groups is a PRO-licensed feature. See https://links.sonatype.com/product-nexus-repository
+
+kubectl get pods -n kss-auth-service 
+kubectl get secrets -n kss-auth-service 
+kubectl get pvc -n kss-auth-service 
+kubectl get configmaps -n kss-auth-service 
+kubectl get ingress -n kss-auth-service 
+kubectl get jobs -n kss-auth-service 
+kubectl get cronjobs -n kss-auth-service 
+kubectl get svc -n kss-auth-service 
+kubectl get certificate -n kss-auth-service 
+kubectl get sts -n kss-auth-service 
+kubectl get networkpolicy -n kss-auth-service 
+
+kubectl create secret docker-registry docker-secret \
+  --docker-server=docker-hosted.sebaoffice.ir \
+  --docker-username=YOUR_USERNAME \
+  --docker-password=YOUR_PASSWORD \
+  --namespace kss-auth-service
+
+kubectl apply -f deployment.yaml -n kss-auth-service
+
+kubectl delete networkpolicy kss-auth-service-network-policy -n kss-auth-service
+kubectl delete secrets docker-secret -n kss-auth-service

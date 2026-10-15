@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<RootNamespace>KSS.Api.Tests</RootNamespace>
+		<AssemblyName>KSS.Api.Tests</AssemblyName>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<LangVersion>latest</LangVersion>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
+		<PackageReference Include="xunit" Version="2.4.1" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
+	</ItemGroup>
+
+	<!-- The dependency runs tests -> app. KSS.Api must never reference this project. -->
+	<ItemGroup>
+		<ProjectReference Include="..\KSS.Api\KSS.Api.csproj" />
+	</ItemGroup>
+
+</Project>

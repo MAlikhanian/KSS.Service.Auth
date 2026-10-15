@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <RootNamespace>KSS.WorkerService</RootNamespace>
+    <AssemblyName>KSS.WorkerService</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-KSS.WorkerService-6094ec1e-f6fe-450a-9ec3-6aed5c393ead</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KSS.Dto\KSS.Dto.csproj" />
+    <ProjectReference Include="..\KSS.Entity\KSS.Entity.csproj" />
+    <ProjectReference Include="..\KSS.Helper\KSS.Helper.csproj" />
+  </ItemGroup>
+</Project>
