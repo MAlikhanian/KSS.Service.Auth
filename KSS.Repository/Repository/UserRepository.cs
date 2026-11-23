@@ -78,5 +78,38 @@ namespace KSS.Repository.Repository
                 await _dbContext.SaveChangesAsync();
             }
         }
+
+        public async Task<IRepositoryTransaction> BeginRegistrationTransactionAsync() =>
+            new RegistrationTransaction(_dbContext, await _dbContext.Database.BeginTransactionAsync());
+
+        private sealed class RegistrationTransaction : IRepositoryTransaction
+        {
+            private readonly AuthDbContext _dbContext;
+            private readonly Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction _transaction;
+            private bool _committed;
+
+            public RegistrationTransaction(AuthDbContext dbContext, Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction)
+            {
+                _dbContext = dbContext;
+                _transaction = transaction;
+            }
+
+            public async Task CommitAsync()
+            {
+                await _transaction.CommitAsync();
+                _committed = true;
+            }
+
+            public async ValueTask DisposeAsync()
+            {
+                if (!_committed)
+                {
+                    await _transaction.RollbackAsync();
+                    // The rolled-back rows must not stay tracked as if they were saved.
+                    _dbContext.ChangeTracker.Clear();
+                }
+                await _transaction.DisposeAsync();
+            }
+        }
     }
 }

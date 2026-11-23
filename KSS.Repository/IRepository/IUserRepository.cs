@@ -8,5 +8,8 @@ namespace KSS.Repository.IRepository
         Task<List<Guid>> GetUserRoleIdsAsync(Guid userId);
         Task<List<string>> GetUserPermissionsAsync(Guid userId);
         Task AssignDefaultRoleAsync(Guid userId);
+
+        /// <summary>Starts the transaction self-registration writes its user and role inside.</summary>
+        Task<IRepositoryTransaction> BeginRegistrationTransactionAsync();
     }
 }

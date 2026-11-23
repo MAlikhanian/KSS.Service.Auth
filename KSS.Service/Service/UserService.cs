@@ -4,6 +4,7 @@ using KSS.Entity;
 using KSS.Helper;
 using KSS.Repository.IRepository;
 using KSS.Service.IService;
+using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 
 namespace KSS.Service.Service
@@ -13,12 +14,14 @@ namespace KSS.Service.Service
         private readonly IUserRepository _userRepository;
         private readonly IPersonApiClient _personApiClient;
         private readonly IAccountAdministrationGuard _administrationGuard;
+        private readonly ILogger<UserService> _logger;
 
-        public UserService(IMapper mapper, IUserRepository repository, IPersonApiClient personApiClient, IAccountAdministrationGuard administrationGuard) : base(mapper, repository)
+        public UserService(IMapper mapper, IUserRepository repository, IPersonApiClient personApiClient, IAccountAdministrationGuard administrationGuard, ILogger<UserService> logger) : base(mapper, repository)
         {
             _userRepository = repository;
             _personApiClient = personApiClient;
             _administrationGuard = administrationGuard;
+            _logger = logger;
         }
 
         public async Task<UserDto> RegisterAsync(RegisterRequestDto request, Guid? tenantCompanyId = null)
@@ -41,7 +44,29 @@ namespace KSS.Service.Service
                     throw new BusinessRuleException("DUPLICATE_PHONE");
             }
 
-            // 4. Call Person API to create person and get PersonId.
+            // 4. Insert the user FIRST, inside one transaction, with no PersonId yet. A failure in the user's own
+            //    write (a constraint, a column limit) now happens before any Person exists, and a failed Person call
+            //    rolls the user back, so neither side is left half-made. Nothing is ever deleted from Person.
+            await using var transaction = await _userRepository.BeginRegistrationTransactionAsync();
+
+            // Id, CreatedBy, CreatedAt are set by ApplyEntityDefaults
+            var user = new User
+            {
+                PersonId = null,
+                Username = request.Username,
+                Email = request.Email,
+                Phone = request.Phone,
+                CountryId = request.CountryId,
+                PasswordHash = Authentication.PasswordHash(request.Password),
+                IsActive = true,
+                IsEmailVerified = false,
+                IsPhoneVerified = false,
+                FailedLoginAttempts = 0
+            };
+
+            await _userRepository.AddAsync(user);
+
+            // 5. Call Person API to create person and get PersonId.
             // Leave SexId / DateOfBirth / Birth*Id at DTO defaults — the user
             // fills them in from the profile page. PreferredLanguageId
             // defaults to 12 (Persian); pass it explicitly if the caller wants
@@ -60,25 +85,21 @@ namespace KSS.Service.Service
             // membership, exactly as before.
             var createdPerson = await _personApiClient.CreatePersonAsync(createPersonRequest, tenantCompanyId);
 
-            // 5. Insert user with PersonId — Id, CreatedBy, CreatedAt are set by ApplyEntityDefaults
-            var user = new User
+            try
             {
-                PersonId = createdPerson.Id,
-                Username = request.Username,
-                Email = request.Email,
-                Phone = request.Phone,
-                CountryId = request.CountryId,
-                PasswordHash = Authentication.PasswordHash(request.Password),
-                IsActive = true,
-                IsEmailVerified = false,
-                IsPhoneVerified = false,
-                FailedLoginAttempts = 0
-            };
-
-            await _userRepository.AddAsync(user);
-
-            // 6. Assign default "User" role (all permissions except Admin)
-            await _userRepository.AssignDefaultRoleAsync(user.Id);
+                // 6. Link the person, assign the default "User" role (all permissions except Admin), commit.
+                user.PersonId = createdPerson.Id;
+                _userRepository.Update(user, false);
+                await _userRepository.SaveChangesAsync();
+                await _userRepository.AssignDefaultRoleAsync(user.Id);
+                await transaction.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                // The Person exists but the user is rolled back. Logged once with the id only, for a listed cleanup.
+                _logger.LogError("Signup left an unlinked Person {PersonId}: {Type}", createdPerson.Id, ex.GetType().Name);
+                throw;
+            }
 
             return _mapper.Map<UserDto>(user);
         }
