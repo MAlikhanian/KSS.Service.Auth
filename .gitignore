@@ -367,6 +367,7 @@ FodyWeavers.xsd
 **/appsettings.*.json
 !**/appsettings.Example.json
 !**/appsettings.*.Example.json
+!**/appsettings.Container.json
 
 # NuGet config (contains credentials)
 nuget.config

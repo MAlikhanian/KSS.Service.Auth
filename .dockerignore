@@ -76,3 +76,8 @@ Thumbs.db
 # Windows Form project (not needed for API)
 KSS.WindowsForm/
 
+# Secrets: real appsettings never enter the build context; the image gets the secret-free appsettings.Container.json
+**/appsettings*.json
+!**/appsettings.Container.json
+!**/appsettings.Example.json
+!**/appsettings.*.Example.json

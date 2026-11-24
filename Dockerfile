@@ -43,6 +43,9 @@ RUN mkdir -p /app/config
 # Copy published files from build stage
 COPY --from=build /app/publish .
 
+# Runtime appsettings.json is the tracked, secret-free container file; secrets come from env / k8s secret
+COPY KSS.Api/appsettings.Container.json ./appsettings.json
+
 # Expose HTTP port
 EXPOSE 8000
 
